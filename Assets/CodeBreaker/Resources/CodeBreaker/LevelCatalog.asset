@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c007d73d280db54796fdf83d0d8f2d6, type: 3}
+  m_Name: LevelCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::LevelCatalog
+  mainMenuScene: MainMenu
+  levels:
+  - sceneName: Level 1
+    label: LEVEL 1
+    title: The Holding Rooms
+    description: 'Three sealed rooms stand between you and the exit. Read the question
+      on each lectern, then choose a door. The wrong one leads into fire.
+
+      <color=#9A2A22>3:00
+      on the clock.</color>'
+    loadingImage: {fileID: 21300000, guid: 88e69bb46f4aa924cafe3e7657da8e7c, type: 3}
+    playable: 1
+  - sceneName: Level 2
+    label: LEVEL 2
+    title: The Roofless Halls
+    description: 'Tall, stained walls and no ceiling above them: a maze of halls
+      under a dead grey sky. Find the right door before time runs out.
+
+      <color=#9A2A22>6:00
+      on the clock.</color>'
+    loadingImage: {fileID: 21300000, guid: ae7af57f2facf08488aa9b7202b9fcf9, type: 3}
+    playable: 0
+  - sceneName: Level 3
+    label: LEVEL 3
+    title: The Cell Block
+    description: A block of sealed cells around a single lectern. Every room looks
+      the same, and only one way leads out.
+    loadingImage: {fileID: 21300000, guid: 563f73600c1efb74895a6a1f789514f9, type: 3}
+    playable: 0
+  loadingTips:
+  - Each room's lectern holds the question. Stand close and press E to read it.
+  - A wrong door costs health, and the clock keeps running.
+  - The answer above each door changes every time a room gives you a new question.
+  - Press Tab during play to change the music and sound effects volume.
+  - Your progress is saved automatically every time you reach a new level.
