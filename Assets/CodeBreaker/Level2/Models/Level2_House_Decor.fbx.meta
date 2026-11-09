@@ -1,0 +1,314 @@
+fileFormatVersion: 2
+guid: cef2faca993f512e87cc2f6cdc54eecb
+ModelImporter:
+  serializedVersion: 24501
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Book_Blue
+    second: {fileID: 2100000, guid: 7ba332e8aaf55e6e9b7e055501955fa2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Book_Cream
+    second: {fileID: 2100000, guid: 284438991db15bc6bb15b9558f1e25ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Book_Green
+    second: {fileID: 2100000, guid: 4418948515ae5bd8ba3aaded8bd74f91, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Book_Red
+    second: {fileID: 2100000, guid: 01bbcd8b34d15122992b79160ccd468e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Calendar
+    second: {fileID: 2100000, guid: 661351b04b18594bacb1075a83954feb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Ceramic_Blue
+    second: {fileID: 2100000, guid: 32eac218c4775f2aba507ee012a81eb6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Ceramic_Terracotta
+    second: {fileID: 2100000, guid: ec40ed715b3e59429cf9d27a7a439209, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Ceramic_White
+    second: {fileID: 2100000, guid: 4f03de22169754cf9302dd8d74448bf6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Clock_Face
+    second: {fileID: 2100000, guid: e8a1d4ef7a855aeaa3ed74c0b879e067, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Corkboard
+    second: {fileID: 2100000, guid: cb09dcba12745312a174563447ef23c0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Document_Binary
+    second: {fileID: 2100000, guid: 0063a121f21059c4adfd7423bc5c1eef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Fruit_GreenApple
+    second: {fileID: 2100000, guid: a6d3a004ca1b52c5a70f68f780ce0f8e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Fruit_Orange
+    second: {fileID: 2100000, guid: 9b0497623b085ee3aee4975976f2a87e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Glass_Dark
+    second: {fileID: 2100000, guid: 9dc40775e67755b3a615338d907b3cec, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Glass_Jar
+    second: {fileID: 2100000, guid: b6839885b9c059cfba8e1af22765568e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Lampshade_Fabric
+    second: {fileID: 2100000, guid: 1673447a52c45da0ae6727ed50300ae1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Metal_Black
+    second: {fileID: 2100000, guid: a4b71ffd30b35c66a15e645cfa1b11dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Metal_Brass
+    second: {fileID: 2100000, guid: 230d20eae02a5ad4af158b55141f2c0a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Metal_GrayPainted
+    second: {fileID: 2100000, guid: 0f7e274b07cf5487ae3f20e88720218f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Metal_StainlessSteel
+    second: {fileID: 2100000, guid: eca300ae5556511ab2c12383a60ea461, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Painting_Abstract
+    second: {fileID: 2100000, guid: f885ed838ce15e1c9a64cd9c57e6c40d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Painting_Landscape
+    second: {fileID: 2100000, guid: f0255da5f5285318a97e87bb6163eb3a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Painting_Modern
+    second: {fileID: 2100000, guid: d5a3c1418e7754608af09776154a166d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Painting_Pattern
+    second: {fileID: 2100000, guid: 80998e8050bc593db178dbcfabf61fcd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Paper_Notes
+    second: {fileID: 2100000, guid: a8f563d0d7fa5a05a58848b75a1f1b0a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Paper_StickyNote
+    second: {fileID: 2100000, guid: c33f6e1030b75d49b9b6f97d21bb86f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Paper_White
+    second: {fileID: 2100000, guid: b3f327f2c5c1544185b88628a4d4e12b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Photo_Print
+    second: {fileID: 2100000, guid: be433e70b2cf5e0481688a655f4def8a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Plant_Leaf
+    second: {fileID: 2100000, guid: 886876d9832d5adb8ceddab22ec19742, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Plant_Soil
+    second: {fileID: 2100000, guid: 2a442d4e920b5aa0b69ba173f3b4f00b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Plant_Stem
+    second: {fileID: 2100000, guid: 62fc184ea24158708b64b1d0dfbc55d6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Plastic_Black
+    second: {fileID: 2100000, guid: 3af26cd6993a5311a249df1bf250f946, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Plastic_White
+    second: {fileID: 2100000, guid: f566780b197257a9867b7207589d9a01, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Rubber_Dark
+    second: {fileID: 2100000, guid: 3277763d7a7451aaa5f4743df22dd201, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Screen_Monitor_Code
+    second: {fileID: 2100000, guid: ad1c84044f0759d198a90587657a7a6e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Screen_TV_Off
+    second: {fileID: 2100000, guid: cf6be6792a2b540a975a69e686905cdc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Whiteboard
+    second: {fileID: 2100000, guid: 5f87b75ebb1758cdbc46eac33d6cc622, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Wood_Oak
+    second: {fileID: 2100000, guid: 7180e572341758fcb48aaf17bddbf7c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Wood_Walnut
+    second: {fileID: 2100000, guid: 856579cd866959a1af77ee26ac1b294b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: L2_Wood_WhitePainted
+    second: {fileID: 2100000, guid: ea67bd2586365cfc8b2b3d8e9e657298, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
+    importVisibility: 0
+    importBlendShapes: 0
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 1
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 4
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
+  importAnimation: 0
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 0
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

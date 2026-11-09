@@ -1,0 +1,108 @@
+Level 2 environment pass 2 - build report  (11/8/2026 8:05:45 PM)
+Backup already present (kept): Assets/CodeBreaker/Level2/Backups/Level 2 (before environment pass 2).unity
+Prop textures found: 51
+Hierarchy: Level2/{Architecture, Doors, Furniture, PuzzleProps, DecorativeProps, Lighting, Ceiling, Environment}
+
+[Hallways] widened from 1.15 m to 1.60 m clear (0.225 m each side, centre lines and doorways unchanged)
+  disabled (replaced) HALL_Walls_Hallway_A
+  disabled (replaced) HALL_Walls_Hallway_B
+  disabled (replaced) HALL_Walls_Hallway_C
+  disabled (replaced) HALL_Floor_Hallway_A
+  disabled (replaced) HALL_Floor_Hallway_B
+  disabled (replaced) HALL_Floor_Hallway_C
+  disabled (replaced) HALL_Ceiling_Hallway_A
+  disabled (replaced) HALL_Ceiling_Hallway_B
+  disabled (replaced) HALL_Ceiling_Hallway_C
+  disabled (replaced) HALL_Skirting_Hallway_A
+  disabled (replaced) HALL_Skirting_Hallway_B
+  disabled (replaced) HALL_Skirting_Hallway_C
+  disabled old collider Wall_03
+  disabled old collider Wall_25
+  disabled old collider Wall_06
+  disabled old collider Wall_20
+  disabled old collider Wall_09
+  disabled old collider Wall_15
+  moved HALL_Photo_A by (0, 0.225) m
+  moved HALL_Photo_B by (0, -0.225) m
+  moved HALL_CoatHooks by (0, 0.225) m
+  moved HALL_Painting_Corridor by (0.225, 0) m
+  new hallway shells: walls, door-side jambs, floors, ceilings, skirting + box colliders on walls/jambs
+
+[Doors] 6 wooden doors (frame lining, stops, 3 hinges, lever handles, keyholes, leaf collider) in the existing 1.15 x 2.2 m doorways
+  Door_LivingRoom_Exit: left hinge, open 90 deg
+  Door_Bedroom_Entrance: left hinge, open 90 deg
+  Door_Bedroom_Exit: left hinge, open 90 deg
+  Door_Kitchen_Entrance: left hinge, open 90 deg
+  Door_Kitchen_Exit: left hinge, open 90 deg
+  Door_Study_Entrance: right hinge, open 90 deg
+  Doors are left open (DoorPivot rotated) so the current free-roam navigation still works;
+  set DoorPivot Y rotation to 0 to close a door. InteractionZone trigger is present but disabled.
+
+[Lighting] per-room tuning (existing URP lights kept, no red/horror colours)
+  Light_Bedroom_Ceiling: colour (1.00,0.83,0.64) intensity 26 range 32
+  Light_Bedroom_BedsideLamp_Left: colour (1.00,0.78,0.55) intensity 5 range 9
+  Light_Bedroom_BedsideLamp_Right: colour (1.00,0.78,0.55) intensity 5 range 9
+  Light_Living_Ceiling: colour (1.00,0.87,0.72) intensity 30 range 34
+  Light_Living_FloorLamp: colour (1.00,0.78,0.55) intensity 6 range 10
+  Light_Living_TableLamp: colour (1.00,0.78,0.55) intensity 4.5 range 9
+  Light_Kitchen_Ceiling: colour (1.00,0.97,0.92) intensity 44 range 38
+  Light_Kitchen_Pendant: colour (1.00,0.93,0.82) intensity 10 range 14
+  Light_Study_Ceiling: colour (0.97,0.97,0.96) intensity 34 range 34
+  Light_Study_DeskLamp: colour (1.00,0.97,0.92) intensity 6 range 8
+  Light_Study_FloorLamp: colour (1.00,0.90,0.78) intensity 4 range 9
+  Light_Hallway_A: colour (1.00,0.90,0.78) intensity 13 range 18
+  Light_Hallway_B: colour (1.00,0.90,0.78) intensity 13 range 18
+  Light_Hallway_Corridor: colour (1.00,0.90,0.78) intensity 13 range 18
+  shadows disabled on hallway + pendant lights (shadow atlas was being down-scaled for 42 shadow maps)
+  added Light_Kitchen_UnderCabinet
+  added Light_Hallway_A_DoorFill
+  added Light_Hallway_B_DoorFill
+
+[Ceiling] all rooms already had ceilings + light fixtures; hallway ceilings rebuilt for the wider halls; 7 smoke detectors added
+
+[Living Room - The Family Evening] 4 torn photo pieces (TV cabinet, under sofa cushion, rolled in vase, behind sideboard frame),
+  remote without batteries, AA batteries on bookshelf, star shadow lamp + star figurine (console table), star-slot box,
+  blue book with hidden key (inactive child), door note; false leads: red book, TV guide (Ch 7 circled), movie-night note
+
+[Bedroom - Lights Out] UV flashlight (bedside), MOON UV text on vanity mirror, music box + ballerina dance card (up, right, right, down),
+  11 glow-in-the-dark ceiling stars forming a 5 above the bed, diary note, moon box with direction lock under the bed, 5-drawer jewellery box;
+  false leads: constellation poster, dentist note
+
+[Kitchen - Grandma's Recipe] recipe book + card (Flour, Sugar, Eggs, Milk), flour/sugar jars, egg carton, milk bottle with
+  numbers on their bases (4, 1, 6, 2), scale reading 400 g, fridge note, oven timer display, key inside oven (inactive);
+  false leads: shopping list, 'Oven 350' sticky note, pizza menu
+
+[Study - The Hacker's Desk] login screen on monitor, sticky note (who I love most + proudest year), dog photo 'Byte',
+  Caesar cipher wheel + note SHW QDPH (-> PET NAME), dog collar with tag BYTE, framed 'Programming Award 2019' certificate;
+  false leads: WiFi note, crossed-out old password note.  Solution prepared: BYTE2019
+
+[Hallways] shoe rack + umbrella stand (Hall B), console table + key bowl, mail, bud vase (Hall A)
+
+[Validation] player-sized capsule (r = 0.6 u) swept along the room-to-room route, triggers ignored:
+  samples 297, blocked 2  by: Door_Study_Entrance/DoorLeaf at (-7.50,3.71), Door_Study_Entrance/DoorLeaf at (-7.50,3.81)
+  Door_LivingRoom_Exit open leaf overlaps: none
+  Door_Bedroom_Entrance open leaf overlaps: none
+  Door_Bedroom_Exit open leaf overlaps: none
+  Door_Kitchen_Entrance open leaf overlaps: none
+  Door_Kitchen_Exit open leaf overlaps: none
+  Door_Study_Entrance open leaf overlaps: none
+
+Props placed: 110   Puzzle props: 34
+Prefabs written (17):
+  Assets/CodeBreaker/Level2/Prefabs/L2_Door_Wood_LeftHinge.prefab
+  Assets/CodeBreaker/Level2/Prefabs/L2_Door_Wood_RightHinge.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_SmokeDetector.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Pillow_Terracotta.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Pillow_Cream.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Pillow_Sage.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Coaster.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Mug_White.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Mug_Blue.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Candle_Tall.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Candle_Short.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_PhotoFrame_Small.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_PhotoFrame_Wide.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_GlowStar.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Magnet_Red.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Magnet_Green.prefab
+  Assets/CodeBreaker/Level2/Prefabs/Props/L2P_Magnet_Blue.prefab
