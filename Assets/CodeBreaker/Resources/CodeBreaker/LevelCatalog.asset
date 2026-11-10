@@ -33,14 +33,17 @@ MonoBehaviour:
       <color=#9A2A22>6:00
       on the clock.</color>'
     loadingImage: {fileID: 21300000, guid: ae7af57f2facf08488aa9b7202b9fcf9, type: 3}
-    playable: 0
+    playable: 1
   - sceneName: Level 3
     label: LEVEL 3
-    title: The Cell Block
-    description: A block of sealed cells around a single lectern. Every room looks
-      the same, and only one way leads out.
+    title: The Server Room
+    description: 'The facility is in lockdown. Search the Maintenance, Security and
+      Control rooms for three keycards, then crack the central terminal to open the
+      exit.
+
+      <color=#9A2A22>15:00 on the clock.</color>'
     loadingImage: {fileID: 21300000, guid: 563f73600c1efb74895a6a1f789514f9, type: 3}
-    playable: 0
+    playable: 1
   loadingTips:
   - Each room's lectern holds the question. Stand close and press E to read it.
   - A wrong door costs health, and the clock keeps running.

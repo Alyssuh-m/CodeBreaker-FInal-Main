@@ -5,7 +5,7 @@ using TMPro;
 
 // Code Breaker: countdown timer with its own time limit per level.
 //
-//  - Each level starts with the limit set for it below (Level 1 = 3:00, Level 2 = 6:00).
+//  - Each level starts with the limit set for it below (Level 1 = 3:00, Level 2 = 20:00, Level 3 = 15:00).
 //  - Wrong answers and checkpoint respawns do NOT touch the timer; it keeps running.
 //  - The timer is only reset when the next level starts (GameFlowManager calls BeginLevel),
 //    or when a completely new game starts.
@@ -25,8 +25,8 @@ public class LevelTimer : MonoBehaviour
     public List<LevelTimeLimit> levelTimeLimits = new List<LevelTimeLimit>
     {
         new LevelTimeLimit { sceneName = "Level 1", seconds = 180f },
-        new LevelTimeLimit { sceneName = "Level 2", seconds = 360f },
-        new LevelTimeLimit { sceneName = "Level 3", seconds = 0f },     // to be decided
+        new LevelTimeLimit { sceneName = "Level 2", seconds = 1200f },   // 20:00 (four puzzle rooms)
+        new LevelTimeLimit { sceneName = "Level 3", seconds = 900f },   // 15:00 (Server Room)
     };
 
     [Tooltip("Used for any level not listed above, or listed with 0 seconds (e.g. Level 3 until decided).")]

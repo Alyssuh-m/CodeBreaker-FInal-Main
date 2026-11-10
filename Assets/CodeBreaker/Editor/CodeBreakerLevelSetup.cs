@@ -549,13 +549,14 @@ public static class CodeBreakerLevelSetup
         gm.finalLevelScene = "Level 3";
         gm.levelTransitionDelay = 6f;
 
-        // Time limit per level (Level 1 = 3:00, Level 2 = 6:00, Level 3 = to be decided -> default)
+        // Time limit per level (Level 1 = 3:00, Level 2 = 20:00 for its four puzzle rooms, Level 3 = 15:00 for the Server Room)
         Undo.RecordObject(timer, "Timer limits");
         if (timer.levelTimeLimits == null) timer.levelTimeLimits = new List<LevelTimeLimit>();
         SetLimit(timer, "Level 1", 180f, log);
-        SetLimit(timer, "Level 2", 360f, log);
+        SetLimit(timer, "Level 2", 1200f, log);
+            SetLimit(timer, "Level 3", 900f, log);
         if (!timer.levelTimeLimits.Any(l => l.sceneName == "Level 3"))
-            timer.levelTimeLimits.Add(new LevelTimeLimit { sceneName = "Level 3", seconds = 0f });
+            timer.levelTimeLimits.Add(new LevelTimeLimit { sceneName = "Level 3", seconds = 900f });
         timer.timeLimit = 360f;
 
         StyleResultCanvas(gm, log);

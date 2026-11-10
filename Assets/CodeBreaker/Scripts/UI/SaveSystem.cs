@@ -17,6 +17,12 @@ public class SaveData
     public float totalPlayTime;
     public string savedAt;   // ISO 8601, local time
 
+    // Optional in-level checkpoint (used by Level 2). Empty for saves made at the start of a level,
+    // so Level 1 and older save files are unaffected.
+    public string checkpointScene;   // scene the checkpoint belongs to
+    public string checkpointLabel;   // e.g. "Hall B"
+    public string checkpointJson;    // that level's own progress data
+
     public DateTime SavedAtTime =>
         DateTime.TryParse(savedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime t) ? t : DateTime.MinValue;
 }
@@ -27,6 +33,14 @@ public static class SaveSystem
 
     // Set by the main menu when the player picks a save; GameFlowManager applies it when that level starts.
     public static SaveData PendingLoad;
+
+    // Set before reloading a level that should continue from its saved checkpoint (Level 2 "Try Again").
+    // The level clears it once it has started.
+    public static bool ResumeCheckpoint;
+
+    // True when the save holds a checkpoint for this scene.
+    public static bool HasCheckpoint(SaveData d, string sceneName) =>
+        d != null && d.checkpointScene == sceneName && !string.IsNullOrEmpty(d.checkpointJson);
 
     public static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 

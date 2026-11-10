@@ -124,7 +124,7 @@ public class GameFlowManager : MonoBehaviour
         if (levelCompleteMenu != null) levelCompleteMenu.Hide();
         SetFade(0f);
 
-        // A new level starts with its own time limit (Level 1 = 3:00, Level 2 = 6:00).
+        // A new level starts with its own time limit (Level 1 = 3:00, Level 2 = 20:00).
         if (!IsGameOver && !GameCompleted && levelTimer != null)
             levelTimer.BeginLevel(scene.name);
 
@@ -149,6 +149,9 @@ public class GameFlowManager : MonoBehaviour
 
         // Continuing a saved game: health, wrong attempts and play time come from the save.
         SaveData pending = SaveSystem.PendingLoad;
+        // Resuming an in-level checkpoint (Load Saved Games or Level 2 Try Again): keep it in the new auto-save.
+        bool resumingCheckpoint = (pending != null && pending.sceneName == scene.name) || SaveSystem.ResumeCheckpoint;
+        SaveData previous = resumingCheckpoint ? SaveSystem.Load() : null;
         if (pending != null && pending.sceneName == scene.name)
         {
             SaveSystem.PendingLoad = null;
@@ -167,7 +170,7 @@ public class GameFlowManager : MonoBehaviour
         // Only real levels from the Level Catalog are saved (not test scenes or the menu).
         LevelCatalog.LevelInfo info = cat != null ? cat.Find(scene.name) : null;
         if (info == null) return;
-        SaveSystem.Save(new SaveData
+        SaveData data = new SaveData
         {
             sceneName = scene.name,
             levelName = info != null && !string.IsNullOrEmpty(info.label) ? ToTitle(info.label) : scene.name,
@@ -175,7 +178,14 @@ public class GameFlowManager : MonoBehaviour
             maxHealth = playerHealth != null ? playerHealth.maxHealth : 100f,
             wrongAttempts = playerHealth != null ? playerHealth.WrongAttempts : 0,
             totalPlayTime = totalPlayTime,
-        });
+        };
+        if (SaveSystem.HasCheckpoint(previous, scene.name))
+        {
+            data.checkpointScene = previous.checkpointScene;
+            data.checkpointLabel = previous.checkpointLabel;
+            data.checkpointJson = previous.checkpointJson;
+        }
+        SaveSystem.Save(data);
     }
 
     static string ToTitle(string s) =>
@@ -190,7 +200,19 @@ public class GameFlowManager : MonoBehaviour
     // ---------------------------------------------------------------- end states
     public void PlayerDied(string reason) => GameOver(reason);
 
-    public void TimeUp() => GameOver("Time's up! You ran out of time before escaping.");
+    // A level can show its own time-up screen instead of Game Over (Level 2: Retry / Quit).
+    // Return true from the handler when it took care of it. Null (Level 1) = the normal Game Over.
+    public static System.Func<bool> TimeUpHandler;
+
+    public void TimeUp()
+    {
+        if (TimeUpHandler != null && TimeUpHandler())
+        {
+            StopTimer();
+            return;
+        }
+        GameOver("Time's up! You ran out of time before escaping.");
+    }
 
     public void GameOver(string reason)
     {
