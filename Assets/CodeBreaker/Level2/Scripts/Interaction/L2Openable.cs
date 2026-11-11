@@ -52,6 +52,24 @@ namespace CodeBreaker.Level2
             }
         }
 
+        // Makes an object (e.g. a hidden item placed in this drawer at runtime) move with this part.
+        // Call it while the part is closed.
+        public void Attach(Transform t)
+        {
+            if (t == null) return;
+            int n = attached != null ? attached.Length : 0;
+            var a = new Transform[n + 1];
+            var p = new Vector3[n + 1];
+            var r = new Quaternion[n + 1];
+            for (int i = 0; i < n; i++) { a[i] = attached[i]; p[i] = attPos[i]; r[i] = attRot[i]; }
+            Quaternion inv = Quaternion.Inverse(closedRot);
+            a[n] = t;
+            p[n] = inv * (t.position - closedPos);
+            r[n] = inv * t.rotation;
+            attached = a; attPos = p; attRot = r;
+            if (amount > 0f) Apply(amount);
+        }
+
         public override void Interact()
         {
             if (anim != null) StopCoroutine(anim);

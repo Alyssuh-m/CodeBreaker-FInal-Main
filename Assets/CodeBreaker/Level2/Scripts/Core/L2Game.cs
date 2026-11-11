@@ -454,6 +454,16 @@ namespace CodeBreaker.Level2
             foreach (L2LightEntry l in s.lights) lightStates[l.group] = l.on;
         }
 
+        // Saves the current state without moving to a new checkpoint (level start, item collected).
+        // Loading it puts the player at the last checkpoint reached (or the level start).
+        public void SaveProgress(string label)
+        {
+            if (Completed) return;
+            if (!string.IsNullOrEmpty(label) && checkpoint == 0) checkpointLabel = SceneName + " (" + label + ")";
+            if (string.IsNullOrEmpty(checkpointLabel)) checkpointLabel = SceneName;
+            SaveCheckpoint();
+        }
+
         // Raised just before a checkpoint is written, so a level can store extra numbers (e.g. its timer).
         public event System.Action Saving;
 

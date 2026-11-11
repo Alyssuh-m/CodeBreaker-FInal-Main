@@ -28,13 +28,13 @@ namespace CodeBreaker.Level2
         [Header("Hints per room (each list gets more direct)")]
         [TextArea(2, 4)] public string[] livingHints =
         {
-            "The torn photo and the note by the door point to the same two values: the clock and the TV channel.",
+            "Search the room: the four photo pieces, the batteries and the star figurine can be hidden anywhere here, inside drawers and cabinets too. The photo and the note by the door point to two values: the clock and the TV channel.",
             "Binary place values are 8 4 2 1. 1000 = 8 and 0011 = 2 + 1 = 3. Set the wall clock to 8 and put the TV on channel 3 (the remote needs batteries).",
             "When the star lamp shines, put the star figurine into the star slot on the bookshelf, then take the key from the blue book.",
         };
         [TextArea(2, 4)] public string[] bedroomHints =
         {
-            "The diary is a little program: find the moves, count the stars, then open the right drawer.",
+            "The diary is a little program: find the moves, count the stars, then open the right drawer. The UV flashlight is hidden somewhere in this room: check drawers and cabinets.",
             "Shine the UV flashlight on the mirror. The music box shows the moves: UP, RIGHT, RIGHT, DOWN opens the moon box. Then switch the lights off and count the stars on the ceiling.",
             "stars = 5 and arrays start at 0, so open drawer[5 - 1] = drawer[4]: the TOP drawer of the jewellery box.",
         };

@@ -103,14 +103,19 @@ namespace CodeBreaker.Level2
                         if (it.UsesPickupKey) return best;
                         continue;
                     }
-                    if (it != best && it.UsesPickupKey && hits[i].distance - bestDist < 1.2f) return it;
+                    if (it != best && it.UsesPickupKey && hits[i].distance - bestDist < Reach(best)) return it;
                     continue;
                 }
                 if (IsBlocker(c)) break;
-                if (best != null && hits[i].distance - bestDist > 1.2f) break;
+                if (best != null && hits[i].distance - bestDist > Reach(best)) break;
             }
             return best;
         }
+
+        // How far behind the first target a pick-up may still win. An open drawer / cabinet door in front
+        // of an item hidden in the furniture gets more room (items in closed containers are disabled,
+        // so nothing can be taken through a closed door).
+        static float Reach(L2Interactable first) => first is L2Openable ? 3f : 1.2f;
 
         class Comparer : System.Collections.Generic.IComparer<RaycastHit>
         {

@@ -168,6 +168,8 @@ namespace CodeBreaker.Level2.EditorTools
             SetupFalseLeads();
             SetupOpenables();
             FixKitchenCountertopCollider();
+            FixVisuals();
+            BuildHidingSpots(gmGo);
 
             // ---------------- icons
             RenderIcons(familyPhoto);
@@ -200,18 +202,25 @@ namespace CodeBreaker.Level2.EditorTools
                 var tvGo = new GameObject("TV (L2TV)");
                 tvGo.transform.SetParent(g, false);
                 tv = tvGo.AddComponent<L2TV>();
+                // The screen sits exactly on the TV model's own screen surface (its "screen" sub-mesh),
+                // not on the whole model's bounds (which include the stand and the thick back), and is
+                // parented to the TV so it follows it.
+                Transform oldScreen = tvMesh.Find("TV Screen");
+                if (oldScreen != null) Object.DestroyImmediate(oldScreen.gameObject);
+                Bounds sb = ScreenSubmeshBounds(tvMesh, b);
                 var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 Object.DestroyImmediate(q.GetComponent<Collider>());
                 q.name = "TV Screen";
-                q.transform.SetParent(tvGo.transform, false);
-                q.transform.position = new Vector3(b.max.x + 0.02f, b.center.y + b.size.y * 0.04f, b.center.z);
+                q.transform.position = new Vector3(sb.max.x + 0.004f, sb.center.y, sb.center.z);
                 q.transform.rotation = Quaternion.LookRotation(Vector3.left);   // visible side faces +x (into the room)
-                q.transform.localScale = new Vector3(b.size.z * 0.86f, b.size.y * 0.74f, 1f);
+                q.transform.localScale = new Vector3(sb.size.z * 0.995f, sb.size.y * 0.99f, 1f);
+                q.transform.SetParent(tvMesh, true);
+                log.AppendLine("TV screen fitted to the screen surface: x " + sb.max.x.ToString("0.000") + ", " + sb.size.z.ToString("0.00") + " x " + sb.size.y.ToString("0.00"));
                 var qr = q.GetComponent<MeshRenderer>();
                 qr.sharedMaterial = tvMat;
                 qr.shadowCastingMode = ShadowCastingMode.Off;
                 tv.screen = qr;
-                var glow = NewLight(tvGo.transform, "TV Glow", LightType.Point, q.transform.position + Vector3.right * 1.2f, new Color(0.3f, 0.45f, 1f), 3f, 16f);
+                var glow = NewLight(tvGo.transform, "TV Glow", LightType.Point, q.transform.position + Vector3.right * 1.6f, new Color(0.3f, 0.45f, 1f), 3f, 16f);
                 glow.enabled = false;
                 tv.screenGlow = glow;
                 log.AppendLine("TV screen created on LIV_Television");
@@ -868,6 +877,196 @@ namespace CodeBreaker.Level2.EditorTools
             p.itemId = item;
             p.displayName = L2Items.NameOf(item);
             if (t.GetComponentInChildren<Collider>(true) == null) FitCollider(t.gameObject, 0.4f, true);
+        }
+
+        // ================================================================== visual fixes
+        // Bounds of the TV model's screen sub-mesh (the material whose name contains "Screen").
+        static Bounds ScreenSubmeshBounds(Transform tv, Bounds fallback)
+        {
+            var mf = tv.GetComponent<MeshFilter>();
+            var mr = tv.GetComponent<MeshRenderer>();
+            if (mf == null || mf.sharedMesh == null || mr == null) return fallback;
+            Mesh mesh = mf.sharedMesh;
+            Vector3[] v = mesh.vertices;
+            Matrix4x4 M = tv.localToWorldMatrix;
+            for (int sm = 0; sm < mesh.subMeshCount && sm < mr.sharedMaterials.Length; sm++)
+            {
+                Material mat = mr.sharedMaterials[sm];
+                if (mat == null || !mat.name.Contains("Screen")) continue;
+                bool any = false;
+                Bounds b = new Bounds();
+                foreach (int i in mesh.GetTriangles(sm))
+                {
+                    Vector3 w = M.MultiplyPoint3x4(v[i]);
+                    if (!any) { b = new Bounds(w, Vector3.zero); any = true; }
+                    else b.Encapsulate(w);
+                }
+                if (any) return b;
+            }
+            return fallback;
+        }
+
+        // Targeted fixes for visual bugs found in the Level 2 house (idempotent).
+        static void FixVisuals()
+        {
+            // 1) White decor vase hanging half off the right end of the living-room sideboard
+            //    (sideboard top ends at x -42.0, vase reached -41.34): move it to the free spot between
+            //    the second candle and the photo frame.
+            Transform vase = FindDeep(level, "LIV_DecorVase_3");
+            if (vase != null)
+            {
+                Bounds vb = vase.GetComponent<Renderer>().bounds;
+                if (vb.max.x > -42.05f)
+                {
+                    vase.position += new Vector3(-45.98f - vb.center.x, 0f, 0f);
+                    log.AppendLine("Visual fix: LIV_DecorVase_3 moved back onto the sideboard top");
+                }
+            }
+
+            // 2) Kitchen upper cabinets: the underside panel used pure black plastic, which read as a
+            //    missing / see-through bottom. Give it the cabinet's own laminate (renderer slot only).
+            Material laminate = LoadMat("L2_Cabinet_SageLaminate");
+            int cab = 0;
+            for (int i = 1; i <= 6; i++)
+            {
+                Transform u = FindDeep(level, "KIT_UpperCabinet_U" + i);
+                Renderer r = u != null ? u.GetComponent<Renderer>() : null;
+                if (r == null || laminate == null) continue;
+                Material[] mats = r.sharedMaterials;
+                bool changed = false;
+                for (int k = 0; k < mats.Length; k++)
+                    if (mats[k] != null && mats[k].name == "L2_Plastic_Black") { mats[k] = laminate; changed = true; }
+                if (changed) { r.sharedMaterials = mats; cab++; }
+            }
+            log.AppendLine("Visual fix: kitchen upper cabinet undersides -> laminate on " + cab + " cabinets");
+
+            // 3) Kitchen sink: the basin's side walls only face outwards, so from above they are invisible
+            //    and the dark cabinet shows through as black slivers. Add inward-facing steel walls.
+            Transform counter = FindDeep(level, "KIT_Countertop_Marble");
+            if (counter != null)
+            {
+                Transform old = counter.Find(Gen + "SinkInnerWalls");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var walls = new GameObject(Gen + "SinkInnerWalls");
+                walls.transform.SetParent(counter, true);
+                Material steel = LoadMat("L2_Metal_StainlessSteel");
+                float x0 = 7.43f, x1 = 10.58f, z0 = 28.18f, z1 = 29.72f, y0 = 2.55f, y1 = 3.37f, e = 0.004f;
+                float ym = (y0 + y1) * 0.5f, h = y1 - y0;
+                SinkWall(walls.transform, "Wall_Back", new Vector3((x0 + x1) * 0.5f, ym, z1 - e), Vector3.forward, new Vector2(x1 - x0, h), steel);
+                SinkWall(walls.transform, "Wall_Front", new Vector3((x0 + x1) * 0.5f, ym, z0 + e), Vector3.back, new Vector2(x1 - x0, h), steel);
+                SinkWall(walls.transform, "Wall_Left", new Vector3(x0 + e, ym, (z0 + z1) * 0.5f), Vector3.left, new Vector2(z1 - z0, h), steel);
+                SinkWall(walls.transform, "Wall_Right", new Vector3(x1 - e, ym, (z0 + z1) * 0.5f), Vector3.right, new Vector2(z1 - z0, h), steel);
+                log.AppendLine("Visual fix: sink basin inner walls added");
+            }
+        }
+
+        // A quad whose visible side faces away from 'wallDir' (i.e. into the basin).
+        static void SinkWall(Transform parent, string name, Vector3 pos, Vector3 wallDir, Vector2 size, Material m)
+        {
+            var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(q.GetComponent<Collider>());
+            q.name = name;
+            q.transform.position = pos;
+            q.transform.rotation = Quaternion.LookRotation(wallDir);   // visible side = -forward = towards the basin centre
+            q.transform.SetParent(parent, true);
+            SetWorldScale(q.transform, new Vector3(size.x, size.y, 1f));
+            q.GetComponent<Renderer>().sharedMaterial = m;
+        }
+
+        // ================================================================== randomized hiding spots
+        static string RoomOf(Vector3 p)
+        {
+            if (p.x > -53.3f && p.x < -23.7f && p.z > -30f && p.z < 2f) return "living";
+            if (p.x > -9.8f && p.x < 18.4f && p.z > -29.8f && p.z < -7f) return "bedroom";
+            return null;
+        }
+
+        static readonly string[] RandomItems =
+            { L2Items.Photo1, L2Items.Photo2, L2Items.Photo3, L2Items.Photo4, L2Items.Batteries, L2Items.StarFigurine, L2Items.UVFlashlight };
+
+        static void BuildHidingSpots(GameObject gm)
+        {
+            // clean spots from earlier runs (drawer spots live under the drawers)
+            foreach (L2HidingSpot old in Object.FindObjectsByType<L2HidingSpot>(FindObjectsInactive.Include))
+                Object.DestroyImmediate(old.gameObject);
+            Transform root = Group(gameplay, "HidingSpots");
+
+            var shuffle = gm.AddComponent<L2ItemShuffle>();
+            var pickups = new Dictionary<string, L2Pickup>();
+            foreach (L2Pickup p in level.GetComponentsInChildren<L2Pickup>(true)) pickups[p.itemId] = p;
+
+            // each item's own hand-made hiding place stays a valid option
+            foreach (string id in RandomItems)
+            {
+                if (!pickups.TryGetValue(id, out L2Pickup p)) { log.AppendLine("WARNING: pickup " + id + " not found"); continue; }
+                string room = RoomOf(RendererBounds(p.transform).center);
+                var go = new GameObject(Gen + "HideSpot_Original_" + id);
+                go.transform.SetParent(root, false);
+                go.transform.SetPositionAndRotation(p.transform.position, p.transform.rotation);
+                var s = go.AddComponent<L2HidingSpot>();
+                s.room = room; s.onlyItem = id;
+                shuffle.spots.Add(s);
+                shuffle.items.Add(new L2ItemShuffle.Entry { itemId = id, room = room, pickup = p });
+            }
+
+            // drawers and cabinets of the Living Room and Bedroom (the jewellery box is a puzzle, not a hiding place)
+            int made = 0;
+            var openables = new List<L2Openable>(Object.FindObjectsByType<L2Openable>());
+            openables.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            foreach (L2Openable o in openables)
+            {
+                Renderer pr = o.GetComponent<Renderer>();
+                if (pr == null) continue;
+                string room = RoomOf(pr.bounds.center);
+                if (room == null) continue;
+                if (!SpotFloor(o, out Vector3 floor)) { log.AppendLine("  no floor found in " + o.name); continue; }
+                var go = new GameObject(Gen + "HideSpot_" + o.name);
+                if (o.kind == L2Openable.Kind.Drawer) go.transform.SetParent(o.transform, true);
+                else go.transform.SetParent(root, true);
+                go.transform.position = floor;
+                var s = go.AddComponent<L2HidingSpot>();
+                s.room = room; s.container = o;
+                shuffle.spots.Add(s);
+                made++;
+            }
+            log.AppendLine("Randomized items: " + shuffle.items.Count + ", hiding spots: " + shuffle.spots.Count + " (" + made + " drawers / cabinets)");
+        }
+
+        // Finds the inside floor of a drawer (its bottom) or of the cabinet behind a door (lowest shelf
+        // below the door's middle), by ray-casting against a temporary mesh collider.
+        static bool SpotFloor(L2Openable o, out Vector3 floor)
+        {
+            floor = Vector3.zero;
+            Renderer pr = o.GetComponent<Renderer>();
+            Bounds b = pr.bounds;
+            Transform meshT = o.transform;
+            Vector3 origin;
+            if (o.kind == L2Openable.Kind.Drawer)
+            {
+                origin = new Vector3(b.center.x, b.max.y - 0.02f, b.center.z);
+            }
+            else
+            {
+                Renderer body = o.transform.parent != null ? o.transform.parent.GetComponent<Renderer>() : null;
+                if (body == null) return false;
+                meshT = body.transform;
+                Bounds cb = body.bounds;
+                // the door's thin axis points out of the cabinet; step inside by half the cabinet depth
+                Vector3 s = b.size;
+                Vector3 outDir = s.x < s.z ? new Vector3(Mathf.Sign(b.center.x - cb.center.x), 0f, 0f) : new Vector3(0f, 0f, Mathf.Sign(b.center.z - cb.center.z));
+                float depth = Mathf.Abs(outDir.x) > 0f ? cb.size.x : cb.size.z;
+                Vector3 inner = new Vector3(b.center.x, 0f, b.center.z) - outDir * (depth * 0.45f);
+                origin = new Vector3(inner.x, Mathf.Min(b.center.y, cb.max.y - 0.15f), inner.z);
+            }
+            MeshFilter mf = meshT.GetComponent<MeshFilter>();
+            if (mf == null || mf.sharedMesh == null) return false;
+            var mc = meshT.gameObject.AddComponent<MeshCollider>();
+            mc.sharedMesh = mf.sharedMesh;
+            bool ok = mc.Raycast(new Ray(origin, Vector3.down), out RaycastHit hit, 6f);
+            Object.DestroyImmediate(mc);
+            if (!ok || hit.normal.y < 0.7f) return false;
+            floor = hit.point;
+            return true;
         }
 
         // Binary place-value poster (8 4 2 1) on the TV wall of the Living Room, beside the TV.
