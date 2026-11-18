@@ -99,11 +99,12 @@ public static class CodeBreakerSettings
     static void ApplyOnStartup()
     {
         AudioListener.volume = PlayerPrefs.GetFloat(MasterKey, DefaultMaster);
+        // The Graphics Quality option was removed from the settings: forget a level saved by an older
+        // build so the game always runs with the project's quality settings.
         if (PlayerPrefs.HasKey(QualityKey))
         {
-            int q = PlayerPrefs.GetInt(QualityKey);
-            if (q >= 0 && q < QualitySettings.names.Length && q != QualitySettings.GetQualityLevel())
-                QualitySettings.SetQualityLevel(q, true);
+            PlayerPrefs.DeleteKey(QualityKey);
+            PlayerPrefs.Save();
         }
     }
 }

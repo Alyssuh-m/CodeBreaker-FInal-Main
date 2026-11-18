@@ -16,8 +16,8 @@ namespace CodeBreaker.Level2
         public static L2LevelSession Instance { get; private set; }
 
         [Header("Timer")]
-        [Tooltip("Level 2 time limit in seconds (20:00 = 1200). With the Game Session present its timer is used (and capped to this).")]
-        public float timeLimit = 1200f;
+        [Tooltip("Level 2 time limit in seconds (30:00 = 1800, set from LevelTimer). With the Game Session present its timer is used (and capped to this).")]
+        public float timeLimit = 1800f;
         public float warningTime = 60f;
 
         [Header("Score")]
@@ -44,18 +44,29 @@ namespace CodeBreaker.Level2
             "Lift each ingredient to see the binary number underneath: 100 = 4, 1 = 1, 110 = 6, 10 = 2.",
             "Type the numbers in recipe order on the oven timer: 4 1 6 2.",
         };
-        [TextArea(2, 4)] public string[] studyHints =
+        // Study hints for the picture-key puzzle. (Renamed from studyHints so the old cipher hints saved
+        // in the scene are no longer used.)
+        [TextArea(2, 4)] public string[] studyPictureHints =
         {
-            "The terminal asks for values you learned earlier: the TV channel (Living Room) and the number of stars (Bedroom).",
-            "Use the cipher wheel: shift each letter of SHW QDPH back by the channel number (3). S becomes P.",
-            "SHW QDPH = PET NAME. The pet's name is on the dog collar (BYTE) and the proudest year is on the certificate (2019). Password: BYTE2019.",
+            "The terminal asks for values you learned earlier: the TV channel (Living Room) and the number of stars (Bedroom). The note on the desk is written in pictures.",
+            "The whiteboard is the picture key: heart = who I love, paw = my dog, calendar = my best year. Match them on the picture wheel to decode the note.",
+            "The heart is the dog: its collar says BYTE. The best year is on the certificate: 2019. Password: BYTE2019.",
         };
+
+        [Header("Stuck helper")]
+        [Tooltip("Seconds without any progress before the objective hint gets one step more specific")]
+        public float stuckSeconds = 180f;
 
         L2Game G => L2Game.Instance;
         bool ownClock;
         float ownRemaining;
         bool timeUp;
         bool finished;
+        int lastStamp = -1;
+        string lastObjectiveKey;
+        float stuckTimer;
+        float objectiveCheck;
+        float stampCheck;
 
         public bool TimeIsUp => timeUp;
 
@@ -72,6 +83,7 @@ namespace CodeBreaker.Level2
 
         void Start()
         {
+            if (LevelTimer.TryFixedLimit(gameObject.scene.name, out float fixedLimit)) timeLimit = fixedLimit;   // 30:00
             GameFlowManager gm = GameFlowManager.Instance;
             ownClock = gm == null || gm.levelTimer == null;
             ownRemaining = timeLimit;
@@ -86,6 +98,43 @@ namespace CodeBreaker.Level2
                 g.Saving += OnSaving;
                 if (g.LoadedState != null && g.HasInt("l2_time")) SetRemaining(g.GetInt("l2_time", Mathf.RoundToInt(timeLimit)));
                 if (g.ui != null) g.ui.AddPauseButton("HINT  (H)", () => { g.ui.Resume(); ShowHint(); });
+                if (g.ui != null) g.ui.AddPauseButton("NOTES  (J)", () => { g.ui.Resume(); ShowJournal(); });
+                // the old one-line intro note is replaced by the room briefing (UpdateBriefing)
+            }
+        }
+
+        // First thing in the Living Room: say what to look for (not where).
+        System.Collections.IEnumerator IntroNote()
+        {
+            yield return new WaitForSeconds(2.5f);
+            L2Game g = G;
+            if (g == null || g.Completed || g.Flag("exit_living") || g.Flag("photo_assembled") || g.Flag("intro_photo_note")) yield break;
+            g.SetFlag("intro_photo_note");
+            g.Notify("The family photo is torn. The pieces must be somewhere in this room.", L2NoteKind.Info);
+        }
+
+        // About 3 minutes without progress: the objective hint gets one step more specific.
+        void TrackStuck(L2Game g)
+        {
+            stampCheck -= Time.deltaTime;
+            if (stampCheck > 0f) return;
+            stampCheck = 1f;
+            int stamp = g.ProgressStamp;
+            string key = CurrentRoom();
+            if (stamp != lastStamp || key != lastObjectiveKey)
+            {
+                lastStamp = stamp;
+                lastObjectiveKey = key;
+                stuckTimer = 0f;
+                if (g.StuckNudge) { g.StuckNudge = false; g.RefreshObjective(false); }
+                return;
+            }
+            stuckTimer += 1f;
+            if (!g.StuckNudge && stuckTimer >= stuckSeconds)
+            {
+                g.StuckNudge = true;
+                g.RefreshObjective(false);
+                g.Notify("Stuck? The hint under your objective has been updated.", L2NoteKind.Info);
             }
         }
 
@@ -135,6 +184,10 @@ namespace CodeBreaker.Level2
 
             if (timeUp || g.Completed || g.Paused || g.ModalOpen || (g.ui != null && g.ui.IsTyping)) return;
             if (g.InteractionsBlocked) return;
+            TrackStuck(g);
+            UpdateBriefing(g);
+            objectiveCheck -= Time.deltaTime;
+            if (objectiveCheck <= 0f) { objectiveCheck = 0.5f; g.RefreshObjective(); }   // step objectives follow every change
             if (Input.GetKeyDown(KeyCode.H)) ShowHint();
             else if (Input.GetKeyDown(KeyCode.J)) ShowJournal();
         }
@@ -154,6 +207,7 @@ namespace CodeBreaker.Level2
             g.SetBlocked(true);
             if (g.FlashlightOn) g.SetFlashlight(false, false);
             if (g.sfx != null) g.sfx.Failure();
+            g.ForgetNotes();   // this attempt is over: the next one starts with an empty Notes journal
             if (g.ui != null) g.ui.ShowTimeUp("The house locked you in before you could escape.\nRetry from your last checkpoint, restart Level 2, or quit to the menu.");
         }
 
@@ -168,8 +222,97 @@ namespace CodeBreaker.Level2
             return "study";
         }
 
+        // The hint texts live here in code (the arrays above are kept only so old scene data still loads).
+        // Each list goes from "where to look" to "how it works"; the last one is close to the answer.
+        static readonly string[] LivingHintsV2 =
+        {
+            "Search every drawer and cabinet in this room for the four torn photo pieces, then assemble them in the inventory (V). The finished photo shows how this room looked that evening.",
+            "Two photo pieces have writing on the back: clock = 1000 and channel = 0011. Those are binary numbers. The poster by the TV shows the place values 8 4 2 1: add up the places that have a 1. The TV remote needs batteries hidden in this room.",
+            "Clock = 8:00 and TV = channel 3, then switch on the star lamp. Put the star figurine into the slot the star's shadow points to, and take the key from the blue book.",
+        };
+        static readonly string[] BedroomHintsV2 =
+        {
+            "Read the diary on the bed: it is a little program with three blanks. Find the UV flashlight hidden in this room. Something here only shows under UV light.",
+            "Shine the UV flashlight on the mirror. Open and wind the music box: the dancer's moves (UP, RIGHT, RIGHT, DOWN) open the moon box. Its note says: lights off, look up.",
+            "Count the glowing stars on the ceiling in the dark. open(drawer[stars - 1]) with arrays starting at 0: count from the bottom drawer, which is drawer[0].",
+        };
+        static readonly string[] KitchenHintsV2 =
+        {
+            "Read Grandma's recipe on the counter. One ingredient is missing: the one that comes in a carton of 6. Completing the recipe unlocks the oven timer.",
+            "Lift the flour, sugar, eggs and milk and read underneath. Each label is a variable: \"milk = sugar * 2\" means milk holds two times whatever sugar holds. Only one label is a plain number. Start there.",
+            "sugar is 1. Work out milk and flour from it, then eggs = flour + milk. Type the four values in the order oven.Set(flour, sugar, eggs, milk) asks for them.",
+        };
+        static readonly string[] StudyHintsV2 =
+        {
+            "The computer first checks what you learned: the TV channel (Living Room) and the number of stars (Bedroom). The note on the desk is written in pictures.",
+            "The whiteboard is the picture key: heart = who I love, paw = my dog, calendar = my best year. Match them on the picture wheel to decode the note.",
+            "The heart is the dog: its collar has its name. The best year is on the certificate on the wall. Type the name and the year together.",
+        };
+
         string[] HintsFor(string room) =>
-            room == "living" ? livingHints : room == "bedroom" ? bedroomHints : room == "kitchen" ? kitchenHints : studyHints;
+            room == "living" ? LivingHintsV2 : room == "bedroom" ? BedroomHintsV2 : room == "kitchen" ? KitchenHintsV2 : StudyHintsV2;
+
+        // ------------------------------------------------------------------ room briefings
+        // Shown once, a moment after the player first gets into each room (saved as a flag).
+        static readonly (string room, string title, string text)[] Briefings =
+        {
+            ("living", "THE LIVING ROOM",
+             "The door slammed shut behind you. Somebody tore the family photo apart and hid the pieces in this room.\n\nFind them and put the photo back together. It shows how this room looked that night.\n\n<color=#9A918A>H = hint (costs score)   ·   J = notes   ·   V = inventory</color>"),
+            ("bedroom", "THE BEDROOM",
+             "A child's bedroom. A diary lies open on the bed, written like a little program.\n\nDo what it says, one line at a time. Some of it can't be seen in normal light."),
+            ("kitchen", "THE KITCHEN",
+             "Grandma's kitchen. Her recipe book is still open on the counter, and the oven timer is locked.\n\nGrandpa labelled everything in here the way he wrote his programs."),
+            ("study", "THE STUDY",
+             "The last room. The computer on the desk guards the way out.\n\nIt will ask for things you already found in the other rooms. Your notes (J) remember them for you."),
+        };
+
+        float briefingCheck;
+
+        void UpdateBriefing(L2Game g)
+        {
+            briefingCheck -= Time.deltaTime;
+            if (briefingCheck > 0f) return;
+            briefingCheck = 0.5f;
+            if (g.ui == null || g.ModalOpen || g.Paused || g.Completed || SceneLoader.IsLoading) return;
+            string room = CurrentRoom();
+            if (g.Flag("brief_" + room)) { briefingFor = null; return; }
+            if (room != "living" && !PlayerInRoom(room)) return;
+            if (briefingFor != room) { briefingFor = room; briefingDelay = room == "living" ? 2.5f : 1.0f; return; }
+            briefingDelay -= 0.5f;
+            if (briefingDelay > 0f) return;
+            foreach (var b in Briefings)
+                if (b.room == room)
+                {
+                    g.SetFlag("brief_" + room);
+                    if (g.sfx != null) g.sfx.Click();
+                    g.ui.ShowInfo(b.title, b.text);
+                    break;
+                }
+        }
+
+        string briefingFor;
+        float briefingDelay;
+
+        // The previous room's exit is open; wait until the player has actually walked through it
+        // (more than a few metres away from that door).
+        bool PlayerInRoom(string room)
+        {
+            L2Game g = G;
+            if (g == null || g.player == null) return true;
+            string door = room == "bedroom" ? "Door_LivingRoom_Exit" : room == "kitchen" ? "Door_Bedroom_Exit" : "Door_Kitchen_Exit";
+            if (!doorCache.TryGetValue(door, out L2Door d))
+            {
+                d = null;
+                foreach (L2Door x in FindObjectsByType<L2Door>(FindObjectsInactive.Include)) if (x.name == door) { d = x; break; }
+                doorCache[door] = d;
+            }
+            if (d == null) return true;
+            Vector3 a = g.player.position, b = d.transform.position;
+            a.y = 0f; b.y = 0f;
+            return Vector3.Distance(a, b) > 4f;
+        }
+
+        readonly Dictionary<string, L2Door> doorCache = new Dictionary<string, L2Door>();
 
         static string RoomName(string room) =>
             room == "living" ? "Living Room" : room == "bedroom" ? "Bedroom" : room == "kitchen" ? "Kitchen" : "Study";
@@ -215,25 +358,38 @@ namespace CodeBreaker.Level2
             if (g == null || g.ui == null) return;
             var sb = new StringBuilder();
             int n = 0;
+            bool binary = false;
             foreach (string id in L2Items.PhotoPieces)
             {
                 L2ItemDef d = L2Items.Get(id);
                 if (d != null && !string.IsNullOrEmpty(d.back) && g.IsCollected(id))
                 {
                     sb.Append("<color=#E8C547>").Append(d.name).Append(" (back)</color>\n").Append(d.back).Append("\n\n");
+                    if (d.back.ToLowerInvariant().Contains("binary")) binary = true;
                     n++;
                 }
             }
-            var seen = new HashSet<string>();
-            foreach (L2Examine ex in FindObjectsByType<L2Examine>(FindObjectsInactive.Include))
+            // ingredient numbers read in the Kitchen (saved, so they never need lifting again)
+            var lifted = new StringBuilder();
+            foreach (L2Ingredient ing in FindObjectsByType<L2Ingredient>(FindObjectsInactive.Include))
             {
-                if (!g.Flag(ex.ReadFlag)) continue;
-                string title = string.IsNullOrEmpty(ex.title) ? ex.DisplayName : ex.title;
-                string key = title + "|" + ex.body;
-                if (!seen.Add(key)) continue;
-                sb.Append("<color=#E8C547>").Append(title).Append("</color>\n").Append(ex.body).Append("\n\n");
+                if (!g.Flag("seen_" + ing.ingredient.ToLowerInvariant())) continue;
+                lifted.Append("Under the ").Append(ing.ingredient).Append(":   ").Append(ing.Underside).Append("\n");
+            }
+            if (lifted.Length > 0)
+            {
+                sb.Append("<color=#E8C547>Kitchen ingredients</color>\n").Append(lifted)
+                  .Append("<color=#9A918A>Each label is a variable:  name = value.  The name on the left holds the value on the right.</color>\n\n");
                 n++;
             }
+            if (binary)
+                sb.Append("<color=#9A918A>Binary: 8 4 2 1  ->  1000 = 8</color>\n\n");
+            if (g.Flag("picture_decoded"))
+            {
+                sb.Append("<color=#E8C547>Picture note (decoded)</color>\nPASSWORD = who I love + my best year\nwho I love = my dog\n\n");
+                n++;
+            }
+            L2Examine.AppendReadNotes(g, sb, ref n);
             if (n == 0) sb.Append("Nothing yet. Notes you read are copied here automatically.");
             g.ui.ShowInfo("NOTES  (J)", sb.ToString().TrimEnd());
         }

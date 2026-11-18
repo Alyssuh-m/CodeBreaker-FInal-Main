@@ -192,6 +192,10 @@ public class AudioManager : MonoBehaviour
 
     float SfxScale => sfxCeiling * (mixerOk ? 1f : sfxVolume);
 
+    // For LevelFootsteps (Levels 2 and 3): the same SFX loudness, and whether gameplay audio is muted.
+    public float SfxLevel => SfxScale;
+    public bool Silenced => silenced;
+
     static float ToDecibels(float v) => v <= 0.0001f ? -80f : Mathf.Log10(v) * 20f;
 
     // ---------------------------------------------------------------- per-frame: heartbeat + countdown
@@ -209,6 +213,7 @@ public class AudioManager : MonoBehaviour
     void UpdateFootsteps()
     {
         if (stepSource == null || footstepsWalk == null || footstepsWalk.Length == 0) return;
+        if (LevelFootsteps.Active) { playerCC = null; return; }   // Levels 2 and 3 play their own steps
 
         if (playerCC == null)
         {
@@ -288,7 +293,7 @@ public class AudioManager : MonoBehaviour
     {
         if (heartbeatSource == null || heartbeat == null || health == null) return;
 
-        float hp = health.maxHealth > 0f ? health.CurrentHealth / health.maxHealth : 1f;
+        float hp = !health.Active ? 1f : (health.maxHealth > 0f ? health.CurrentHealth / health.maxHealth : 1f);   // no heartbeat where health is off
         bool low = !health.IsDead && hp < heartbeatStartsBelow;
 
         if (!low)

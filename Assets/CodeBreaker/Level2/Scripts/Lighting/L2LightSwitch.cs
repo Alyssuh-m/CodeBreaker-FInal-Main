@@ -36,7 +36,7 @@ namespace CodeBreaker.Level2
             Apply(on, false);
         }
 
-        public override string Prompt => "Press E to Interact";
+        public override string Prompt => "Press E to Flip the Light Switch";
 
         public override void Interact() => Apply(!IsOn, true);
 

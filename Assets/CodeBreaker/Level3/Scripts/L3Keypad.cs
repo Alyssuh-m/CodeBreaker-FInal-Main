@@ -44,7 +44,7 @@ namespace CodeBreaker.Level3
         public override string Prompt => Solved ? DisplayName + " — solved" : "Press E to " + verb + " " + DisplayName;
 
         public string KeypadTitle => title;
-        public virtual string KeypadCode => code;
+        public virtual string KeypadCode => M != null ? M.ExpandCode(code) : code;
         public bool SymbolKeys => symbolKeys;
         public int MaxLength => maxLength;
         public string CurrentHint => M != null ? M.HintFor(station, hint) : null;

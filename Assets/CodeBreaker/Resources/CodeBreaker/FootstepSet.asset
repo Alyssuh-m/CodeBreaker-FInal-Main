@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 417bea16e35b27644a8e4ef923ff9682, type: 3}
+  m_Name: FootstepSet
+  m_EditorClassIdentifier: Assembly-CSharp::FootstepSet
+  walk:
+  - {fileID: 8300000, guid: f25a25fe1ddb6624c98b1023008c71a7, type: 3}
+  - {fileID: 8300000, guid: 3f1d822ebf967e34c8a2c7048b22c283, type: 3}
+  - {fileID: 8300000, guid: 6e46d405cd81177419da30cc027a9520, type: 3}
+  - {fileID: 8300000, guid: ed465f05b5eaade458f48c1ad812f69b, type: 3}
+  - {fileID: 8300000, guid: f79167513be8ea54e8973ba4a2f6b982, type: 3}
+  - {fileID: 8300000, guid: 7f5274b23d576e34fbd1adff54963e3c, type: 3}

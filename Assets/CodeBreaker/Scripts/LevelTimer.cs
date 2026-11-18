@@ -5,7 +5,7 @@ using TMPro;
 
 // Code Breaker: countdown timer with its own time limit per level.
 //
-//  - Each level starts with the limit set for it below (Level 1 = 3:00, Level 2 = 20:00, Level 3 = 15:00).
+//  - Each level starts with its own limit: Level 1 = 5:00, Level 2 = 30:00, Level 3 = 40:00 (FixedLimits).
 //  - Wrong answers and checkpoint respawns do NOT touch the timer; it keeps running.
 //  - The timer is only reset when the next level starts (GameFlowManager calls BeginLevel),
 //    or when a completely new game starts.
@@ -24,9 +24,9 @@ public class LevelTimer : MonoBehaviour
     [Header("Time Limit Per Level (seconds)")]
     public List<LevelTimeLimit> levelTimeLimits = new List<LevelTimeLimit>
     {
-        new LevelTimeLimit { sceneName = "Level 1", seconds = 180f },
-        new LevelTimeLimit { sceneName = "Level 2", seconds = 1200f },   // 20:00 (four puzzle rooms)
-        new LevelTimeLimit { sceneName = "Level 3", seconds = 900f },   // 15:00 (Server Room)
+        new LevelTimeLimit { sceneName = "Level 1", seconds = 300f },    // 5:00 (Holding Rooms)
+        new LevelTimeLimit { sceneName = "Level 2", seconds = 1800f },   // 30:00 (four puzzle rooms)
+        new LevelTimeLimit { sceneName = "Level 3", seconds = 2400f },   // 40:00 (Server Room)
     };
 
     [Tooltip("Used for any level not listed above, or listed with 0 seconds (e.g. Level 3 until decided).")]
@@ -65,8 +65,25 @@ public class LevelTimer : MonoBehaviour
         UpdateTimerUI();
     }
 
+    // Limits fixed in code. They win over the list above, because that list is saved in the Level 1
+    // scene (which holds the Game Session) and the Level 1 scene file is not edited. Level 2 and
+    // Level 3 read the same table for their own clocks, so every level uses one value everywhere.
+    static readonly Dictionary<string, float> FixedLimits = new Dictionary<string, float>
+    {
+        { "Level 1", 300f },    //  5:00 (Holding Rooms)
+        { "Level 2", 1800f },   // 30:00 (Family House)
+        { "Level 3", 2400f },   // 40:00 (Server Room)
+    };
+
+    public static bool TryFixedLimit(string sceneName, out float seconds)
+    {
+        seconds = 0f;
+        return sceneName != null && FixedLimits.TryGetValue(sceneName, out seconds);
+    }
+
     public float LimitFor(string sceneName)
     {
+        if (TryFixedLimit(sceneName, out float fixedSeconds)) return fixedSeconds;
         foreach (LevelTimeLimit l in levelTimeLimits)
             if (l != null && l.sceneName == sceneName && l.seconds > 0f)
                 return l.seconds;

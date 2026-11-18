@@ -24,8 +24,9 @@ namespace CodeBreaker.Level2
             "    Add(sugar);\n" +
             "    Add(" + fill + ");   // the one that comes in a carton of 6\n" +
             "    Add(milk);\n" +
-            "    oven.Set( ?, ?, ?, ? );   // each ingredient's number, in this order\n" +
-            "}";
+            "    oven.Set(flour, sugar, " + fill + ", milk);   // each one's value, in this order\n" +
+            "}\n" +
+            "// Grandpa wrote each value under its jar:  name = value";
 
         public override void Interact()
         {

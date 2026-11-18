@@ -19,7 +19,7 @@ namespace CodeBreaker.Level2
         Quaternion hourBase, minuteBase;
         float hourBaseAngle, minuteBaseAngle;
 
-        public override string Prompt => "Press E to Set the Clock";
+        public override string Prompt => IsCorrect ? "Press E to Examine the Clock" : "Press E to Set the Clock";
 
         void Awake()
         {
@@ -69,12 +69,16 @@ namespace CodeBreaker.Level2
 
         public override void Interact()
         {
-            if (Game != null && Game.ui != null) Game.ui.OpenClock(this);
+            if (Game == null) return;
+            // Once it is right the hands are locked, so the solved clock can't be undone by accident.
+            if (IsCorrect) { Game.Notify("The hands are locked at " + targetHour + ":" + targetMinute.ToString("00") + ".", L2NoteKind.Info); return; }
+            if (Game.ui != null) Game.ui.OpenClock(this);
         }
 
         // Called by the clock interface's Confirm button.
         public void Confirm(int hour, int minute)
         {
+            if (IsCorrect) return;   // locked once correct
             Hour = hour;
             Minute = minute;
             ApplyHands();
@@ -84,8 +88,16 @@ namespace CodeBreaker.Level2
                 Game.SetInt("clock_h", hour);
                 Game.SetInt("clock_m", minute);
                 Game.SetFlag("clock_confirmed_8", correct);
-                if (Game.sfx != null) Game.sfx.Click();
-                Game.Notify("The clock now reads " + hour + ":" + minute.ToString("00") + ".", L2NoteKind.Info);
+                if (correct)
+                {
+                    if (Game.sfx != null) Game.sfx.Tick();
+                    Game.Notify("*TICK* The clock reads " + hour + ":" + minute.ToString("00") + " and the hands lock into place.", L2NoteKind.Success);
+                }
+                else
+                {
+                    if (Game.sfx != null) Game.sfx.Click();
+                    Game.Notify("The clock now reads " + hour + ":" + minute.ToString("00") + ".", L2NoteKind.Info);
+                }
                 Game.RefreshObjective();
             }
         }

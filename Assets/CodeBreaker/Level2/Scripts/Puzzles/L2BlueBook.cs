@@ -62,7 +62,13 @@ namespace CodeBreaker.Level2
                 key.transform.SetParent(transform.parent, true);
                 key.transform.SetPositionAndRotation(keyRestPosition, Quaternion.Euler(keyRestEuler));
                 key.SetActive(true);
-                if (animate && Game != null) Game.Notify("Something drops out of the blue book!", L2NoteKind.Success);
+                if (animate && Game != null)
+                {
+                    Game.Notify("Something drops out of the blue book!", L2NoteKind.Success);
+                    // short scare: the TV snaps to static for a second, then back to blue
+                    L2TV tv = FindAnyObjectByType<L2TV>();
+                    if (tv != null) tv.StaticBurst(1f);
+                }
             }
         }
 

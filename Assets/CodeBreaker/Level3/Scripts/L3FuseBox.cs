@@ -154,7 +154,7 @@ namespace CodeBreaker.Level3
                 return;
             }
             string s(int v) => v == 0 ? "--" : v.ToString();
-            display.text = "x:" + s(Get(0)) + "  y:" + s(Get(1)) + "  temp:" + s(Get(2));
+            display.text = "x = " + s(Get(0)) + " | y = " + s(Get(1)) + " | temp = " + s(Get(2));   // live while you move fuses
             display.color = new Color(1f, 0.75f, 0.3f);
             if (panelLight != null) panelLight.enabled = false;
         }

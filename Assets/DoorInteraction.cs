@@ -43,9 +43,10 @@ public class DoorInteraction : MonoBehaviour
     // When nobody listens, the door uses its original result logic below.
     public event Action<DoorInteraction> DoorChosen;
 
-    // The moving door leaf has its own solid BoxCollider. It is passable only WHILE the door swings,
-    // so it can never wedge the player, and solid again as soon as the door stands still (open or
-    // closed) and the player is clear of it - so the player (and the camera) can't walk into the door.
+    // The moving door leaf has its own solid BoxCollider and it stays solid the whole time, also while
+    // the door swings (it used to turn into a trigger mid-swing, which let the player walk through the
+    // opening door). A swinging leaf pushes the player out of its way (DoorLeafPush); if the player is
+    // pinned and can't move, the door waits for that frame instead of passing through them.
     // The side walls and the top beam (door frame) are never touched.
     private readonly List<Collider> leafColliders = new List<Collider>();
     private bool leafSolid = true;
@@ -151,18 +152,19 @@ public class DoorInteraction : MonoBehaviour
         Quaternion targetRotation =
             isOpen ? openRotation : closedRotation;
 
-        doorPivot.localRotation = Quaternion.Slerp(
-            doorPivot.localRotation,
-            targetRotation,
-            Time.deltaTime * openSpeed
-        );
+        Quaternion previous = doorPivot.localRotation;
+        if (Quaternion.Angle(previous, targetRotation) > 0.01f)
+        {
+            doorPivot.localRotation = Quaternion.Slerp(previous, targetRotation, Time.deltaTime * openSpeed);
 
-        // Door leaf collider: passable only while swinging, solid when standing still (open or closed).
-        bool atRest = Quaternion.Angle(doorPivot.localRotation, targetRotation) < 1f;
-        if (!atRest && leafSolid)
-            SetLeafSolid(false);
-        else if (atRest && !leafSolid && !PlayerTouchesLeaf())
-            SetLeafSolid(true);
+            // Solid leaf: push the player out of the way; if they're pinned, hold this frame.
+            if (!leafSolid) SetLeafSolid(true);
+            if (!DoorLeafPush.Resolve(leafColliders, playerController))
+            {
+                doorPivot.localRotation = previous;
+                Physics.SyncTransforms();
+            }
+        }
 
         // Prompt follows the door state
         if (interactionLabel != null && interactionText != null && interactionText.activeSelf && playerNearby)

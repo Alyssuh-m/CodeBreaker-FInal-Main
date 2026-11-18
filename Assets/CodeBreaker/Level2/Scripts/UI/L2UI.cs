@@ -55,6 +55,7 @@ namespace CodeBreaker.Level2
         GameObject promptBox;
         TMP_Text promptText;
         TMP_Text objectiveText, objectiveHint;
+        RectTransform objectiveBox, objectiveAccent;
         RectTransform noteStack;
         TMP_Text heldText;
         readonly List<Note> notes = new List<Note>();
@@ -144,6 +145,7 @@ namespace CodeBreaker.Level2
             }
 
             UpdateNotes();
+            ScrollInfoKeys();
             crosshair.gameObject.SetActive(currentModal == null && !IsPaused && !g.Completed);
             if (lockFlash > 0f) UpdateLockFlash();
         }
@@ -339,10 +341,12 @@ namespace CodeBreaker.Level2
             Image ob = Img(root, "Objective", null, new Color(0f, 0f, 0f, 0.45f));
             Place(ob.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -150f), new Vector2(560f, 118f));
             ob.raycastTarget = false;
+            objectiveBox = ob.rectTransform;
             if (accentSprite != null)
             {
                 Image a = Img(ob.transform, "Accent", accentSprite, Gold);
                 Place(a.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(6f, 118f));
+                objectiveAccent = a.rectTransform;
                 a.type = Image.Type.Simple;
                 a.raycastTarget = false;
             }
@@ -352,7 +356,8 @@ namespace CodeBreaker.Level2
             objectiveText = Txt(ob.transform, "Text", "", 26f, Ink, TextAlignmentOptions.TopLeft, headingFont);
             Place(objectiveText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -36f), new Vector2(526f, 40f));
             objectiveHint = Txt(ob.transform, "Hint", "", 20f, Dim, TextAlignmentOptions.TopLeft);
-            Place(objectiveHint.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -76f), new Vector2(526f, 40f));
+            Place(objectiveHint.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -74f), new Vector2(526f, 42f));
+            objectiveHint.enableAutoSizing = false;   // the box grows to fit (see LayoutObjective)
 
             // notifications (right side)
             noteStack = NewRect("Notifications", root);
@@ -386,8 +391,30 @@ namespace CodeBreaker.Level2
 
         public void SetObjective(string text, string hint)
         {
+            hint = hint ?? "";
+            if (objectiveText.text == text && objectiveHint.text == hint) return;
             objectiveText.text = text;
-            objectiveHint.text = hint ?? "";
+            objectiveHint.text = hint;
+            LayoutObjective();
+        }
+
+        // The objective and its hint can each run over several lines: stack them (hint always below the
+        // objective) and grow the dark box and its gold accent to fit, so nothing overlaps.
+        void LayoutObjective()
+        {
+            const float width = 526f, top = 36f, gap = 6f, bottom = 14f;
+            float textH = Mathf.Ceil(objectiveText.GetPreferredValues(objectiveText.text, width, 0f).y);
+            textH = Mathf.Max(textH, 32f);
+            objectiveText.rectTransform.anchoredPosition = new Vector2(22f, -top);
+            objectiveText.rectTransform.sizeDelta = new Vector2(width, textH);
+            float hintH = 0f;
+            if (!string.IsNullOrEmpty(objectiveHint.text))
+                hintH = Mathf.Ceil(objectiveHint.GetPreferredValues(objectiveHint.text, width, 0f).y);
+            objectiveHint.rectTransform.anchoredPosition = new Vector2(22f, -(top + textH + gap));
+            objectiveHint.rectTransform.sizeDelta = new Vector2(width, Mathf.Max(hintH, 1f));
+            float boxH = Mathf.Max(top + textH + (hintH > 0f ? gap + hintH : 0f) + bottom, 90f);
+            if (objectiveBox != null) objectiveBox.sizeDelta = new Vector2(objectiveBox.sizeDelta.x, boxH);
+            if (objectiveAccent != null) objectiveAccent.sizeDelta = new Vector2(objectiveAccent.sizeDelta.x, boxH);
         }
 
         void RefreshHeld()

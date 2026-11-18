@@ -22,6 +22,8 @@ namespace CodeBreaker.Level2
         public string exitFlag;
         public float swingTime = 0.9f;
 
+        System.Collections.Generic.List<Collider> leafColliders;
+
         public bool Locked { get; private set; }
         public bool IsOpen { get; private set; }
         bool moving;
@@ -108,21 +110,35 @@ namespace CodeBreaker.Level2
         {
             moving = true;
             if (delay > 0f) yield return new WaitForSeconds(delay);
-            if (leafCollider != null) leafCollider.enabled = false;   // never shove or trap the player mid-swing
+            // The leaf stays solid while it swings (it used to be switched off, which let the player
+            // walk through a door that was just starting to open). It pushes the player out of its
+            // way; if the player is pinned against something, the door waits instead of passing
+            // through them.
+            if (leafCollider != null) leafCollider.enabled = true;
             if (Game != null && Game.sfx != null) Game.sfx.Door(open, Pos);
 
+            CharacterController cc = Game != null && Game.player != null ? Game.player.GetComponent<CharacterController>() : null;
+            if (leafColliders == null) leafColliders = DoorLeafPush.SolidColliders(leafCollider != null ? leafCollider.transform : pivot);
             float from = pivot != null ? pivot.localEulerAngles.y : 0f;
             float to = open ? openAngle : closedAngle;
-            for (float t = 0f; t < swingTime; t += Time.deltaTime)
+            float t = 0f;
+            while (t < swingTime)
             {
-                float k = Mathf.SmoothStep(0f, 1f, t / swingTime);
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, (t + Time.deltaTime) / swingTime));
+                float before = pivot != null ? pivot.localEulerAngles.y : 0f;
                 SetAngle(Mathf.LerpAngle(from, to, k));
+                if (DoorLeafPush.Resolve(leafColliders, cc)) t += Time.deltaTime;
+                else
+                {
+                    SetAngle(before);   // pinned: wait for the player to step aside
+                    Physics.SyncTransforms();
+                }
                 yield return null;
             }
             SetAngle(to);
+            DoorLeafPush.Resolve(leafColliders, cc);
 
             IsOpen = open;
-            if (leafCollider != null) leafCollider.enabled = true;
             moving = false;
             Record();
 

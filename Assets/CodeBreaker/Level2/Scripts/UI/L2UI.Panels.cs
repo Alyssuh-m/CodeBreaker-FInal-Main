@@ -416,8 +416,11 @@ namespace CodeBreaker.Level2
         void ConfirmClock()
         {
             if (clockTarget == null) return;
+            if (clockTarget.IsCorrect) { clockStatus.text = "<color=#5FD383>The hands are locked.</color>"; return; }
             clockTarget.Confirm(clockH, clockM);
-            clockStatus.text = "<color=#5FD383>Confirmed.</color> The wall clock now reads " + clockH + ":" + clockM.ToString("00") + ".";
+            clockStatus.text = clockTarget.IsCorrect
+                ? "<color=#5FD383>*TICK*  The hands lock into place.</color>"
+                : "<color=#5FD383>Confirmed.</color> The wall clock now reads " + clockH + ":" + clockM.ToString("00") + ".";
         }
 
         // ================================================================== TV remote
@@ -725,7 +728,10 @@ namespace CodeBreaker.Level2
                     keypadDisplay.text = "";
                     yield return new WaitForSecondsRealtime(0.1f);
                 }
-                keypadStatus.text = "<color=#F05A52>Wrong code. Nothing happens.</color>";
+                int right = 0;
+                string want = keypadTarget.code ?? "";
+                for (int i = 0; i < want.Length && i < keypadEntry.Length; i++) if (keypadEntry[i] == want[i]) right++;
+                keypadStatus.text = "<color=#F05A52>Wrong code.</color>  " + right + " of " + want.Length + " digits in the right place.";
                 keypadEntry = "";
                 RefreshKeypad();
                 keypadBusy = false;

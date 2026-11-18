@@ -184,8 +184,10 @@ public class MainMenuController : MonoBehaviour
         {
             System.DateTime when = d.SavedAtTime;
             saveSlotDetails.text =
-                "Health  " + Mathf.CeilToInt(d.health) + " / " + Mathf.CeilToInt(d.maxHealth > 0 ? d.maxHealth : 100) +
-                "     Play time  " + LevelTimer.Format(d.totalPlayTime) + "\n" +
+ (PlayerHealth.UsedIn(d.sceneName)
+                    ? "Health  " + Mathf.CeilToInt(d.health) + " / " + Mathf.CeilToInt(d.maxHealth > 0 ? d.maxHealth : 100) + "     "
+                    : "") +
+                "Play time  " + LevelTimer.Format(d.totalPlayTime) + "\n" +
                 "Saved  " + (when == System.DateTime.MinValue ? "-" : when.ToString("MMM d, yyyy  h:mm tt")) +
                 "\n<size=80%><color=#8C847C>" + (SaveSystem.HasCheckpoint(d, d.sceneName) && !string.IsNullOrEmpty(d.checkpointLabel)
                     ? "Continues from the " + d.checkpointLabel + " checkpoint in " + name + "."

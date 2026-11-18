@@ -20,29 +20,32 @@ MonoBehaviour:
     description: 'Three sealed rooms stand between you and the exit. Read the question
       on each lectern, then choose a door. The wrong one leads into fire.
 
-      <color=#9A2A22>3:00
+      <color=#9A2A22>5:00
       on the clock.</color>'
     loadingImage: {fileID: 21300000, guid: 88e69bb46f4aa924cafe3e7657da8e7c, type: 3}
     playable: 1
   - sceneName: Level 2
     label: LEVEL 2
-    title: The Roofless Halls
-    description: 'Tall, stained walls and no ceiling above them: a maze of halls
-      under a dead grey sky. Find the right door before time runs out.
+    title: The Family House
+    description: 'LIVING ROOM, BEDROOM, KITCHEN, AND STUDY ROOM
 
-      <color=#9A2A22>6:00
-      on the clock.</color>'
-    loadingImage: {fileID: 21300000, guid: ae7af57f2facf08488aa9b7202b9fcf9, type: 3}
+      A quiet family
+      home with every door locked. Solve each room''s puzzle to find the key to the
+      next one.
+
+
+      <color=#9A2A22>30:00 on the clock.</color>'
+    loadingImage: {fileID: 21300000, guid: 823491c83fb0ebe4eb8f5a8d5abff2ae, type: 3}
     playable: 1
   - sceneName: Level 3
     label: LEVEL 3
-    title: The Server Room
+    title: Server Room
     description: 'The facility is in lockdown. Search the Maintenance, Security and
       Control rooms for three keycards, then crack the central terminal to open the
       exit.
 
-      <color=#9A2A22>15:00 on the clock.</color>'
-    loadingImage: {fileID: 21300000, guid: 563f73600c1efb74895a6a1f789514f9, type: 3}
+      <color=#9A2A22>40:00 on the clock.</color>'
+    loadingImage: {fileID: 21300000, guid: bc04a443dc9165544b1ec5d6cb906683, type: 3}
     playable: 1
   loadingTips:
   - Each room's lectern holds the question. Stand close and press E to read it.

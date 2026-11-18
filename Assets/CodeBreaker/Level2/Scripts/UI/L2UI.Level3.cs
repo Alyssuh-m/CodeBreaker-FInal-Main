@@ -161,9 +161,12 @@ namespace CodeBreaker.Level2
             }
         }
 
-        // ================================================================== info screen (terminal text, monitors)
+        // ================================================================== info screen (terminal text, monitors, notes)
+        // The text scrolls when it is longer than the screen (mouse wheel, the scrollbar, or
+        // W/S, the arrow keys and Page Up/Down), so a long Notes journal never runs past CLOSE.
         GameObject infoPanel;
         TMP_Text infoTitle, infoBody;
+        ScrollRect infoScroll;
 
         void BuildInfo()
         {
@@ -173,11 +176,52 @@ namespace CodeBreaker.Level2
             Place(infoTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 10f), new Vector2(1100f, 56f));
             Image scr = Img(c, "Screen", null, new Color(0.02f, 0.05f, 0.08f, 1f));
             Stretch(scr.rectTransform, 0f, 80f, 0f, 70f);
-            infoBody = Txt(scr.transform, "Body", "", 32f, new Color(0.62f, 0.9f, 1f), TextAlignmentOptions.TopLeft);
-            Stretch(infoBody.rectTransform, 30f, 24f, 30f, 24f);
-            infoBody.enableAutoSizing = true;
-            infoBody.fontSizeMax = 34f;
-            infoBody.fontSizeMin = 16f;
+
+            RectTransform view = NewRect("Viewport", scr.transform);
+            Stretch(view, 30f, 20f, 48f, 20f);
+            view.gameObject.AddComponent<RectMask2D>();
+            Image hit = view.gameObject.AddComponent<Image>();   // lets the mouse wheel scroll anywhere on the text
+            hit.color = new Color(0f, 0f, 0f, 0f);
+
+            infoBody = Txt(view, "Body", "", 30f, new Color(0.62f, 0.9f, 1f), TextAlignmentOptions.TopLeft);
+            RectTransform br = infoBody.rectTransform;
+            br.anchorMin = new Vector2(0f, 1f);
+            br.anchorMax = new Vector2(1f, 1f);
+            br.pivot = new Vector2(0.5f, 1f);
+            br.anchoredPosition = Vector2.zero;
+            br.sizeDelta = new Vector2(0f, 100f);
+            infoBody.enableAutoSizing = false;
+            infoBody.richText = true;
+            infoBody.lineSpacing = 4f;
+            ContentSizeFitter fit = infoBody.gameObject.AddComponent<ContentSizeFitter>();
+            fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fit.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            // scrollbar on the right edge of the screen
+            Image track = Img(scr.transform, "Scrollbar", null, new Color(1f, 1f, 1f, 0.06f));
+            RectTransform tr = track.rectTransform;
+            tr.anchorMin = new Vector2(1f, 0f); tr.anchorMax = new Vector2(1f, 1f); tr.pivot = new Vector2(1f, 0.5f);
+            tr.offsetMin = new Vector2(-30f, 20f); tr.offsetMax = new Vector2(-12f, -20f);
+            RectTransform area = NewRect("Sliding Area", track.transform);
+            Stretch(area);
+            Image handle = Img(area, "Handle", null, new Color(0.91f, 0.77f, 0.28f, 0.75f));
+            Stretch(handle.rectTransform);
+            Scrollbar bar = track.gameObject.AddComponent<Scrollbar>();
+            bar.handleRect = handle.rectTransform;
+            bar.targetGraphic = handle;
+            bar.direction = Scrollbar.Direction.BottomToTop;
+
+            infoScroll = scr.gameObject.AddComponent<ScrollRect>();
+            infoScroll.viewport = view;
+            infoScroll.content = br;
+            infoScroll.horizontal = false;
+            infoScroll.vertical = true;
+            infoScroll.movementType = ScrollRect.MovementType.Clamped;
+            infoScroll.scrollSensitivity = 45f;
+            infoScroll.inertia = false;
+            infoScroll.verticalScrollbar = bar;
+            infoScroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+
             Button close = Btn(c, "CLOSE", CloseModal, new Vector2(260f, 60f));
             Place((RectTransform)close.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(260f, 60f));
         }
@@ -188,6 +232,33 @@ namespace CodeBreaker.Level2
             infoTitle.text = title ?? "";
             infoBody.text = body ?? "";
             OpenModal(infoPanel);
+            ScrollInfoToTop();
+        }
+
+        public bool InfoOpen => infoPanel != null && currentModal == infoPanel;
+
+        void ScrollInfoToTop()
+        {
+            if (infoScroll == null) return;
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(infoBody.rectTransform);
+            infoScroll.verticalNormalizedPosition = 1f;
+        }
+
+        // Keyboard scrolling while the info screen is open (called from Update).
+        void ScrollInfoKeys()
+        {
+            if (!InfoOpen || infoScroll == null) return;
+            float view = ((RectTransform)infoScroll.viewport).rect.height;
+            float extra = infoBody.rectTransform.rect.height - view;
+            if (extra <= 1f) return;
+            float step = 0f;
+            if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) step -= 900f * Time.unscaledDeltaTime;
+            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) step += 900f * Time.unscaledDeltaTime;
+            if (Input.GetKeyDown(KeyCode.PageDown)) step -= view * 0.9f;
+            if (Input.GetKeyDown(KeyCode.PageUp)) step += view * 0.9f;
+            if (step == 0f) return;
+            infoScroll.verticalNormalizedPosition = Mathf.Clamp01(infoScroll.verticalNormalizedPosition + step / extra);
         }
 
         // ================================================================== red flash

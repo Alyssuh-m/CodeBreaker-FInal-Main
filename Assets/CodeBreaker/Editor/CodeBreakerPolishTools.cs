@@ -1021,17 +1021,15 @@ public static class CodeBreakerPolishTools
         Place((RectTransform)mm.loadBackButton.transform, new Vector2(0.5f, 0f), new Vector2(0, 70), new Vector2(300, 70));
 
         // ---- settings
-        GameObject settings = Dialog("Settings Screen", cv, "SETTINGS", f, new Vector2(1100, 860), out Transform sp);
+        GameObject settings = Dialog("Settings Screen", cv, "SETTINGS", f, new Vector2(1100, 638), out Transform sp);
         mm.settingsPanel = settings;
         SettingsPanel spc = settings.AddComponent<SettingsPanel>();
-        float y = 205, step = 74;
+        float y = 94, step = 74;
         spc.masterSlider = SliderRow(sp, "MASTER VOLUME", f, y, out spc.masterValue); y -= step;
         spc.musicSlider = SliderRow(sp, "MUSIC", f, y, out spc.musicValue); y -= step;
         spc.sfxSlider = SliderRow(sp, "SOUND EFFECTS", f, y, out spc.sfxValue); y -= step;
-        spc.sensitivitySlider = SliderRow(sp, "MOUSE SENSITIVITY", f, y, out spc.sensitivityValue); y -= step;
-        spc.fullscreenToggle = ToggleRow(sp, "FULLSCREEN", f, y); y -= step;
-        spc.resolutionDropdown = DropdownRow(sp, "RESOLUTION", f, y); y -= step;
-        spc.qualityDropdown = DropdownRow(sp, "GRAPHICS QUALITY", f, y);
+        spc.sensitivitySlider = SliderRow(sp, "MOUSE SENSITIVITY", f, y, out spc.sensitivityValue);
+        // Fullscreen / Resolution / Graphics Quality were removed (they made no visible difference).
         spc.resetButton = MakeButton(sp, "RESET AUDIO + MOUSE", f, 360, 66, 24);
         Place((RectTransform)spc.resetButton.transform, new Vector2(0.5f, 0f), new Vector2(-200, 64), new Vector2(360, 66));
         mm.settingsBackButton = MakeButton(sp, "BACK", f, 300, 66, 28);

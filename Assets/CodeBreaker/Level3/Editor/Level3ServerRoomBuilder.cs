@@ -421,7 +421,7 @@ namespace CodeBreaker.Level3.EditorTools
                 Text3D(door, "DoorLabel", "locker" + (i + 1), new Vector3(1.6f, 0.9f, -0.06f), new Vector2(2.6f, 0.6f), 3.5f, new Color(0.15f, 0.15f, 0.15f), fontHead);
                 Box("Handle", door, new Vector3(2.85f, 0f, -0.12f), new Vector3(0.12f, 0.6f, 0.12f), mSteel, false);
                 Box("NumberCard", inside, new Vector3(0f, -0.2f, 0.55f), new Vector3(1.4f, 1.9f, 0.04f), mPaper, false);
-                Text3D(inside, "Number", cards[i].ToString(), new Vector3(0f, -0.2f, 0.52f), new Vector2(1.3f, 1.8f), 14f, new Color(0.1f, 0.1f, 0.1f), fontHead);
+                Text3D(inside, "Number", "<size=38%>locker" + (i + 1) + " =</size>\n" + cards[i], new Vector3(0f, -0.2f, 0.52f), new Vector2(1.3f, 1.8f), 14f, new Color(0.1f, 0.1f, 0.1f), fontHead);
                 var o = door.gameObject.AddComponent<L2Openable>();
                 o.kind = L2Openable.Kind.Door; o.label = "locker" + (i + 1); o.openAngle = 105f; o.displayName = "locker" + (i + 1);
                 Trigger(door.gameObject, new Vector3(1.6f, 0f, -0.05f), new Vector3(3.2f, 3.6f, 0.3f));
@@ -440,13 +440,13 @@ namespace CodeBreaker.Level3.EditorTools
             lid.localRotation = Quaternion.Euler(12f, 0f, 0f);
             Box("LidShell", lid, new Vector3(0f, 0.5f, 0.02f), new Vector3(1.6f, 1.0f, 0.05f), mPlasticBlack, false);
             Quad("LidScreen", lid, new Vector3(0f, 0.5f, -0.01f), new Vector2(1.45f, 0.88f), mScreen);
-            Text3D(lid, "LidText", "locker2 = locker1;\nlocker1 = locker3;\n// What is in locker2 now?", new Vector3(0f, 0.5f, -0.02f), new Vector2(1.35f, 0.8f), 1.2f, new Color(0.55f, 0.9f, 1f), fontNote, TextAlignmentOptions.Left);
+            Text3D(lid, "LidText", "// RAMOS - job 1\nlocker2 = locker1;\nlocker1 = locker3;\n// What is in locker2 now?", new Vector3(0f, 0.5f, -0.02f), new Vector2(1.35f, 0.8f), 1.2f, new Color(0.55f, 0.9f, 1f), fontNote, TextAlignmentOptions.Left);
             L3Keypad laptop = lap.gameObject.AddComponent<L3Keypad>();
             laptop.displayName = "Laptop";
             laptop.station = "m1"; laptop.title = "RAMOS'S LAPTOP";
-            laptop.code = "locker2 = locker1;\nlocker1 = locker3;\n// What is in locker2 now?";
+            laptop.code = CodeBreakerGuidancePass.RamosLaptopCode;
             laptop.answer = "8"; laptop.maxLength = 3;
-            laptop.hint = "Run the lines top to bottom. Once copied, a value stays put.";
+            laptop.hint = CodeBreakerGuidancePass.RamosLaptopHint;
             laptop.successDisplay = "8"; laptop.successMessage = "locker2 kept 8. Copying a value doesn't link the boxes.";
             laptop.verb = "Use";
             Trigger(lap.gameObject, new Vector3(0f, 0.5f, 0.2f), new Vector3(1.8f, 1.2f, 1.4f));
@@ -456,7 +456,7 @@ namespace CodeBreaker.Level3.EditorTools
             // ---- Station 2: pegboard with name tags (north wall, left) + red locker (south wall)
             Transform peg = Group("Pegboard", m, new Vector3(-54f, 0f, 11.25f - T / 2f), Vector3.back);
             Box("Board", peg, new Vector3(0f, 6.2f, -0.1f), new Vector3(6.4f, 4.2f, 0.15f), mWood, false);
-            Text3D(peg, "Title", "NAME TAGS", new Vector3(0f, 8.0f, -0.2f), new Vector2(5f, 0.6f), 4f, new Color(0.15f, 0.12f, 0.1f), fontHead);
+            Text3D(peg, "Title", PegboardTitle, new Vector3(0f, PegboardTitleY, -0.2f), PegboardTitleBox, 4f, new Color(0.15f, 0.12f, 0.1f), fontHead);
             var tagDefs = new (string id, string text)[]
             {
                 (L2Items.Tag2Fast, "2fast = 3"), (L2Items.TagMyVar, "my var = 1"),
@@ -466,7 +466,7 @@ namespace CodeBreaker.Level3.EditorTools
             {
                 float x = -2.25f + i * 1.5f;
                 Cyl("Hook", peg, new Vector3(x, 6.75f, -0.3f), new Vector3(0.08f, 0.2f, 0.08f), mSteel).transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                Transform tag = Group("Tag_" + tagDefs[i].id, peg, peg.TransformPoint(new Vector3(x, 6.2f, -0.3f)), Vector3.back);
+                Transform tag = Group("Tag_" + tagDefs[i].id, peg, peg.TransformPoint(new Vector3(x, 6.47f, -0.3f)), Vector3.back);
                 Box("Plate", tag, Vector3.zero, new Vector3(1.35f, 0.55f, 0.05f), mYellow, false);
                 Text3D(tag, "Text", tagDefs[i].text, new Vector3(0f, 0f, -0.035f), new Vector2(1.25f, 0.45f), 2.2f, new Color(0.1f, 0.1f, 0.1f), fontNote);
                 var pk = tag.gameObject.AddComponent<L2Pickup>();
@@ -538,7 +538,7 @@ namespace CodeBreaker.Level3.EditorTools
             iconProtos[L2Items.Fuse2] = box.fuse2;
             iconProtos[L2Items.Fuse9] = box.fuse9;
             Quad("Display", fb, new Vector3(-1.1f, 4.0f, -0.81f), new Vector2(2.6f, 0.6f), mScreen);
-            box.display = Text3D(fb, "DisplayText", "x:2  y:9  temp:--", new Vector3(-1.1f, 4.0f, -0.82f), new Vector2(2.5f, 0.55f), 2f, new Color(1f, 0.75f, 0.3f), fontHead);
+            box.display = Text3D(fb, "DisplayText", "x = 2 | y = 9 | temp = --", new Vector3(-1.1f, 4.0f, -0.82f), new Vector2(2.5f, 0.55f), 2f, new Color(1f, 0.75f, 0.3f), fontHead);
             Transform test = Group("TestButton", fb, fb.TransformPoint(new Vector3(1.5f, 4.0f, -0.82f)), Vector3.forward);
             GameObject cap = Cyl("Cap", test, new Vector3(0f, 0f, -0.08f), new Vector3(0.5f, 0.08f, 0.5f), mRed);
             cap.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
@@ -674,11 +674,11 @@ namespace CodeBreaker.Level3.EditorTools
             var pbc = pr.gameObject.AddComponent<BoxCollider>(); pbc.isTrigger = true; pbc.center = new Vector3(0f, 3.4f, -1.1f); pbc.size = new Vector3(2.4f, 1.2f, 1.9f);
             Transform sheet = Group("Printout", pr, pr.TransformPoint(new Vector3(0f, 3.03f, -2.1f)), Vector3.forward);
             Box("Sheet", sheet, Vector3.zero, new Vector3(1.3f, 0.02f, 1.7f), mPaper, false);
-            TextMeshPro st = Text3D(sheet, "Text", "LAST SHIFT LOG\n17 ? 5 = 2\n 9 ? 3 = 27\n 8 ? 2 = 4", new Vector3(0f, 0.02f, 0f), new Vector2(1.2f, 1.6f), 2.2f, new Color(0.1f, 0.1f, 0.12f), fontNote, TextAlignmentOptions.Left);
+            TextMeshPro st = Text3D(sheet, "Text", PrintoutText, new Vector3(0f, 0.02f, 0f), new Vector2(1.2f, 1.6f), 2.2f, new Color(0.1f, 0.1f, 0.12f), fontNote, TextAlignmentOptions.Left);
             st.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             var pex = sheet.gameObject.AddComponent<L2Examine>();
             pex.displayName = "Printout"; pex.title = "LAST SHIFT LOG"; pex.verb = "Read the Printout";
-            pex.body = "Three lines are missing their operator:\n\n17 ? 5 = 2\n 9 ? 3 = 27\n 8 ? 2 = 4";
+            pex.body = PrintoutBody;
             Trigger(sheet.gameObject, new Vector3(0f, 0.15f, 0f), new Vector3(1.5f, 0.5f, 1.9f));
             var pshow = sheet.gameObject.AddComponent<L3ShowObjects>();
             pshow.show = new[] { sheet.gameObject }; pshow.slideFrom = pr.rotation * new Vector3(0f, 0f, 0.9f); pshow.duration = 1.4f;
@@ -928,6 +928,14 @@ namespace CodeBreaker.Level3.EditorTools
             log.AppendLine("Control: cooling gauge " + Degrees(86) + " + fan dial, monitors, console keypad (5), clipboard, levers COOLING>BACKUP>REBOOT -> GREEN keycard");
             return power;
         }
+
+        // Rule text on existing objects (puzzle pass): shared with Code Breaker > Puzzle Pass so a rebuild
+        // keeps the same wording.
+        public const string PegboardTitle = "NAME TAGS\n<size=45%>A valid name: no starting digit, no spaces,\nnot a C# keyword like class</size>";
+        public const float PegboardTitleY = 7.55f;
+        public static readonly Vector2 PegboardTitleBox = new Vector2(5.6f, 1.2f);
+        public const string PrintoutText = "LAST SHIFT LOG\n17 ? 5 = 2\n 9 ? 3 = 27\n 8 ? 2 = 4\n<size=70%>% = what's left over after dividing</size>";
+        public const string PrintoutBody = "Three lines are missing their operator:\n\n17 ? 5 = 2\n 9 ? 3 = 27\n 8 ? 2 = 4\n\n<size=80%>Legend:  % = what's left over after dividing</size>";
 
         static string Degrees(int v) => fontHead != null && fontHead.HasCharacter('°') ? v + "°C" : v + " C";
 

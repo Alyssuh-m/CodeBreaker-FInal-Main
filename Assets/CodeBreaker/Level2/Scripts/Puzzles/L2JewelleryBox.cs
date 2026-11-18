@@ -73,6 +73,13 @@ namespace CodeBreaker.Level2
             }
         }
 
+        public int SecretsFound()
+        {
+            int n = 0;
+            if (Game != null) foreach (string f in RequiredFlags) if (Game.Flag(f)) n++;
+            return n;
+        }
+
         public bool IsDrawerOpen(int number) => number >= 1 && number <= 5 && open[number - 1];
 
         public override void Interact() { }
@@ -90,7 +97,7 @@ namespace CodeBreaker.Level2
                 if (Game != null)
                 {
                     if (Game.sfx != null) Game.sfx.Locked(transform.position);
-                    Game.Notify(label + " is stuck. Something in this room is still unsolved.", L2NoteKind.Warning);
+                    Game.Notify(label + " is stuck... " + SecretsFound() + " of " + RequiredFlags.Length + " secrets found.", L2NoteKind.Warning);
                 }
                 return label + " is stuck.";
             }

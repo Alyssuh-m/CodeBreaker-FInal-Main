@@ -39,6 +39,22 @@ namespace CodeBreaker.Level3
             SetPanel(Solved ? "SYSTEM ONLINE" : "EMERGENCY REBOOT", Solved ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.35f, 0.3f));
         }
 
+        // Per-step lights on the panel: "1 ✓  2 ✓  3 _"
+        void ShowSteps(int done)
+        {
+            if (panelText == null) return;
+            bool tick = panelText.font != null && panelText.font.HasCharacter('\u2713');
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (i > 0) sb.Append("   ");
+                sb.Append(i + 1).Append(' ');
+                if (i < done) sb.Append("<color=#66FF80>").Append(tick ? "\u2713" : "OK").Append("</color>");
+                else sb.Append("_");
+            }
+            SetPanel(sb.ToString(), new Color(1f, 0.85f, 0.4f));
+        }
+
         void SetPanel(string t, Color c)
         {
             if (panelText == null) return;
@@ -60,7 +76,8 @@ namespace CodeBreaker.Level3
             }
             if (lever.leverName != "REBOOT")
             {
-                g.Notify(lever.leverName + " lever pulled.", L2NoteKind.Info);
+                ShowSteps(pulled.Count);
+                g.Notify(lever.leverName + " lever pulled. Step " + pulled.Count + " OK.", L2NoteKind.Info);
                 return;
             }
 

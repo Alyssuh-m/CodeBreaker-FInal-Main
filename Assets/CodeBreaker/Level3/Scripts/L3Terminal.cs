@@ -34,10 +34,12 @@ namespace CodeBreaker.Level3
                 screen.text = "m = 9;  s = 4;  c = 5;\n\nif (m > s && c != 0)\n    exitCode = m * 10 + s;\nelse\n    exitCode = 0;\n// Enter exitCode";
                 return;
             }
-            screen.text = "INSERT KEYCARDS\n\nm = " + m + ";   s = " + s + ";   c = " + cc + ";\n\n" +
-                          (r ? "<color=#FF5050>[X]</color>" : "[ ]") + " RED   " +
-                          (b ? "<color=#4F8BFF>[X]</color>" : "[ ]") + " BLUE   " +
-                          (c ? "<color=#5FD383>[X]</color>" : "[ ]") + " GREEN";
+            // Lockdown screen: which card comes from where, and what each card fills in.
+            screen.text = "LOCKDOWN  ·  INSERT 3 KEYCARDS\n\n" +
+                          (r ? "<color=#FF5050>[X] RED</color>    m = 9" : "[ ] RED    Maintenance (west)") + "\n" +
+                          (b ? "<color=#4F8BFF>[X] BLUE</color>   s = 4" : "[ ] BLUE   Security (east)") + "\n" +
+                          (c ? "<color=#5FD383>[X] GREEN</color>  c = 5" : "[ ] GREEN  Control (north)") + "\n\n" +
+                          "<size=80%>Each card carries the value its wing earned:  m = " + m + ";  s = " + s + ";  c = " + cc + ";</size>";
         }
     }
 }

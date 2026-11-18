@@ -17,6 +17,9 @@ namespace CodeBreaker.Level2
 
         GameObject placedVisual;
 
+        // Faint pulsing glow on the slot while the star shadow points at it (runtime light only).
+        Light glow;
+
         public override string Prompt => Placed ? "Press E to Examine" : "Press E to Examine the Star Slot";
         public override bool WantsItem => !Placed;
         public override bool AcceptsItem(string itemId) => !Placed && itemId == L2Items.StarFigurine;
@@ -24,6 +27,24 @@ namespace CodeBreaker.Level2
         void Start()
         {
             if (Placed) ShowFigurine();
+            var go = new GameObject("Star Slot Glow (runtime)");
+            go.transform.SetParent(transform, false);
+            go.transform.position = (slot != null ? slot.position : transform.position) + Vector3.up * 0.45f;
+            glow = go.AddComponent<Light>();
+            glow.type = LightType.Point;
+            glow.color = new Color(1f, 0.85f, 0.45f);
+            glow.range = 2.2f;
+            glow.shadows = LightShadows.None;
+            glow.intensity = 0f;
+            glow.enabled = false;
+        }
+
+        void Update()
+        {
+            if (glow == null) return;
+            bool on = !Placed && lamp != null && lamp.ShadowActive;
+            glow.enabled = on;
+            if (on) glow.intensity = 1.2f + 0.8f * Mathf.Sin(Time.time * 3f);
         }
 
         public override bool UseItem(string itemId)

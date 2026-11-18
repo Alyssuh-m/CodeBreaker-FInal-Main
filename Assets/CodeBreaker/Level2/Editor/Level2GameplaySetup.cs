@@ -525,12 +525,12 @@ namespace CodeBreaker.Level2.EditorTools
                 var rc = Get<L2RecipeCard>(recipeT, "Grandma's Recipe");
                 rc.image = FindPropTexture(recipeT);
             }
-            Ingredient(r, "Puzzle_Kitchen_Jar_Flour_Bottom4", "Flour", 4, "100 (binary)");
-            Ingredient(r, "Puzzle_Kitchen_Jar_Sugar_Bottom1", "Sugar", 1, "1 (binary)");
-            Ingredient(r, "Puzzle_Kitchen_EggCarton_Bottom6", "Eggs", 6, "110 (binary)");
-            Ingredient(r, "Puzzle_Kitchen_MilkBottle_Bottom2", "Milk", 2, "10 (binary)");
+            Ingredient(r, "Puzzle_Kitchen_Jar_Flour_Bottom4", "Flour", 4, "flour = sugar * 4");
+            Ingredient(r, "Puzzle_Kitchen_Jar_Sugar_Bottom1", "Sugar", 1, "sugar = 1");
+            Ingredient(r, "Puzzle_Kitchen_EggCarton_Bottom6", "Eggs", 6, "eggs = flour + milk");
+            Ingredient(r, "Puzzle_Kitchen_MilkBottle_Bottom2", "Milk", 2, "milk = sugar * 2");
             Examine(r, "Puzzle_Kitchen_Scale_400g", "Kitchen Scale", "The scale reads 400 g.", "Examine");
-            Examine(r, "Puzzle_Kitchen_FridgeNote", "Note on the Fridge", "Follow the recipe, and the oven will remember.", "Read");
+            Examine(r, "Puzzle_Kitchen_FridgeNote", "Note on the Fridge", CodeBreakerGuidancePass.FridgeNoteText, "Read");
 
             Transform timer = r.Find("Puzzle_Kitchen_OvenTimer_Display");
             var oven = Get<L2Oven>(timer, "Oven Timer");
@@ -574,10 +574,12 @@ namespace CodeBreaker.Level2.EditorTools
                 foreach (var old in wheelT.GetComponents<L2Examine>()) Object.DestroyImmediate(old);
                 Get<L2CipherWheel>(wheelT, "Cipher Wheel");
             }
-            Examine(r, "Puzzle_Study_CipherNote_SHWQDPH", "Cipher Note", "SHW  QDPH\nshift = ?", "Read");
+            // Study puzzle = "Picture Key on the Whiteboard" (puzzle pass): the note is written in pictures.
+            Examine(r, "Puzzle_Study_CipherNote_SHWQDPH", CodeBreakerPuzzlePass.NoteTitle, CodeBreakerPuzzlePass.NoteBody, "Read");
             Examine(r, "Puzzle_Study_DogPhoto", "Dog Photo", "\"Byte - best boy\"", "Examine");
             Examine(r, "Puzzle_Study_DogCollar_TagBYTE", "Dog Collar", "The tag on the collar says: BYTE", "Examine");
             Examine(r, "Puzzle_Study_Certificate_Award2019", "Certificate", "Programming Award - 2019", "Read");
+            CodeBreakerPuzzlePass.ApplyLevel2Study(log);   // picture note / wheel / whiteboard key (keeps a re-run identical)
         }
 
         static void SetupFalseLeads()

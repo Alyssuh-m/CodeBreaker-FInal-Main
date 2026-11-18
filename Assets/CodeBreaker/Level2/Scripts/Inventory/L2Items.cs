@@ -74,14 +74,14 @@ namespace CodeBreaker.Level2
 
             const string photoUse = "The Family Evening (collect all four pieces, then press Assemble)";
             Add(Photo1, "Torn Photo Piece (1/4)", "A torn corner of a family photograph. On the back: clock = 1000", photoUse, L2HoldKind.None, Vector3.zero);
-            all[Photo1].back = "clock = 1000   (binary)";
+            all[Photo1].back = "clock = 1000   (binary: see the chart by the TV)";
             Add(Photo2, "Torn Photo Piece (2/4)", "A torn piece of a family photograph. On the back: channel = 0011", photoUse, L2HoldKind.None, Vector3.zero);
-            all[Photo2].back = "channel = 0011   (binary)";
+            all[Photo2].back = "channel = 0011   (binary: see the chart by the TV)";
             Add(Photo3, "Torn Photo Piece (3/4)", "A torn piece of a family photograph, rolled up.", photoUse, L2HoldKind.None, Vector3.zero);
             Add(Photo4, "Torn Photo Piece (4/4)", "A torn corner of a family photograph.", photoUse, L2HoldKind.None, Vector3.zero);
             Add(FamilyPhoto, "Family Photo",
                 "The restored photograph: the family on the sofa, the wall clock showing 8:00 and the TV glowing blue on Channel 3.",
-                "Clue: make the Living Room match the photo", L2HoldKind.None, Vector3.zero);
+                "Clue: make the Living Room match the photo (clock, TV, star lamp)", L2HoldKind.None, Vector3.zero);
             Add(Batteries, "AA Batteries", "Two fresh AA batteries.",
                 "The TV remote on the coffee table", L2HoldKind.Hold, new Vector3(0f, 30f, 0f), 0.2f);
             Add(StarFigurine, "Star Figurine", "A small brass star on a plinth. Its base looks like it would fit a slot.",

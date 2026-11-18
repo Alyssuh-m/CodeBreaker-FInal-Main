@@ -20,7 +20,26 @@ namespace CodeBreaker.Level2
         Vector3 basePos;
         Quaternion baseRot;
 
-        public override string Prompt => "Press E to Lift the " + ingredient;
+        public override string Prompt => "Press E to Lift the " + ingredient + " (check underneath)";
+
+        // Kitchen puzzle (variables): Grandpa labelled the underside of each ingredient with a line of
+        // code. Only sugar holds a plain number; the others are worked out from it:
+        //   sugar = 1  ->  milk = 1 * 2 = 2,  flour = 1 * 4 = 4,  eggs = 4 + 2 = 6
+        // oven.Set(flour, sugar, eggs, milk) = 4 1 6 2 (the oven code is unchanged).
+        // These lines replace the old binary labels, wherever the scene still has them.
+        public static string VariableLine(string ingredient)
+        {
+            switch ((ingredient ?? "").ToLowerInvariant())
+            {
+                case "flour": return "flour = sugar * 4";
+                case "sugar": return "sugar = 1";
+                case "eggs": return "eggs = flour + milk";
+                case "milk": return "milk = sugar * 2";
+            }
+            return null;
+        }
+
+        public string Underside => VariableLine(ingredient) ?? (string.IsNullOrEmpty(label) ? number.ToString() : label);
         public override bool CanInteract => base.CanInteract && !busy;
 
         void Awake()
@@ -56,8 +75,15 @@ namespace CodeBreaker.Level2
 
             if (g != null)
             {
-                g.Notify("Underneath the " + ingredient + ": " + (string.IsNullOrEmpty(label) ? number.ToString() : label), L2NoteKind.Info);
-                g.SetFlag("seen_" + ingredient.ToLowerInvariant());
+                string flag = "seen_" + ingredient.ToLowerInvariant();
+                bool first = !g.Flag(flag);
+                g.Notify("Underneath the " + ingredient + ":   " + Underside + (first ? "   (saved to Notes, J)" : ""), L2NoteKind.Info);
+                if (!g.Flag("vars_explained"))
+                {
+                    g.SetFlag("vars_explained");
+                    g.Notify("Grandpa's labels are variables: the name on the left holds the value on the right.", L2NoteKind.Item);
+                }
+                g.SetFlag(flag);
             }
             yield return new WaitForSeconds(holdTime);
             yield return Move(up, basePos, tipped, baseRot, 0.45f);

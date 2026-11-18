@@ -41,6 +41,9 @@ public class GameFlowManager : MonoBehaviour
     public GameObject resultPanel;
     [Tooltip("Smaller framed panel behind short messages (wrong door, you're alive...).")]
     public GameObject messagePanel;
+    [Tooltip("Short messages (YOU'RE ALIVE!, WRONG DOOR!, TRY AGAIN) sit in the middle of the screen: title / text height from the centre.")]
+    public float messageTitleY = 48f;
+    public float messageDescriptionY = -42f;
 
     [Header("Level Complete (Congratulations buttons)")]
     [Tooltip("TRY AGAIN / NEXT LEVEL / EXIT TO HOME. Leave empty to use the old automatic countdown.")]
@@ -264,7 +267,7 @@ public class GameFlowManager : MonoBehaviour
         CloseLectern();
 
         string rooms = roomsCleared > 0 ? "All " + roomsCleared + " rooms cleared" : "All rooms cleared";
-        string hp = playerHealth != null ? " with " + Mathf.CeilToInt(playerHealth.CurrentHealth) + " HP left" : "";
+        string hp = playerHealth != null && playerHealth.Active ? " with " + Mathf.CeilToInt(playerHealth.CurrentHealth) + " HP left" : "";
         string body = "You escaped " + levelDisplayName + " in " + LevelTimer.Format(levelTime) + ".\n" + rooms + hp + ".";
         if (!string.IsNullOrEmpty(nextScene))
         {
@@ -353,7 +356,7 @@ public class GameFlowManager : MonoBehaviour
         CloseLectern();
 
         string rooms = roomsCleared > 0 ? "All " + roomsCleared + " rooms cleared" : "All rooms cleared";
-        string hp = playerHealth != null ? " with " + Mathf.CeilToInt(playerHealth.CurrentHealth) + " HP left" : "";
+        string hp = playerHealth != null && playerHealth.Active ? " with " + Mathf.CeilToInt(playerHealth.CurrentHealth) + " HP left" : "";
         string nextLimit = levelTimer != null ? LevelTimer.Format(levelTimer.LimitFor(nextScene)) : "--:--";
         string body = "You completed " + levelDisplayName + " in " + LevelTimer.Format(levelTime) + ".\n" +
                       rooms + hp + ".\n\n" +
@@ -497,8 +500,31 @@ public class GameFlowManager : MonoBehaviour
         hideRoutine = null;
     }
 
+    // Positions of the big-screen layout (as set up in the scene), remembered the first time.
+    bool layoutSaved;
+    Vector2 titleFullPos, descriptionFullPos, messagePanelPos;
+
+    // Short messages are centred on the screen; the big screens keep their own layout.
+    void ApplyResultLayout(bool fullScreen)
+    {
+        if (!layoutSaved)
+        {
+            layoutSaved = true;
+            if (resultTitle != null) titleFullPos = resultTitle.rectTransform.anchoredPosition;
+            if (resultDescription != null) descriptionFullPos = resultDescription.rectTransform.anchoredPosition;
+            if (messagePanel != null) messagePanelPos = ((RectTransform)messagePanel.transform).anchoredPosition;
+        }
+        if (resultTitle != null)
+            resultTitle.rectTransform.anchoredPosition = fullScreen ? titleFullPos : new Vector2(titleFullPos.x, messageTitleY);
+        if (resultDescription != null)
+            resultDescription.rectTransform.anchoredPosition = fullScreen ? descriptionFullPos : new Vector2(descriptionFullPos.x, messageDescriptionY);
+        if (messagePanel != null)
+            ((RectTransform)messagePanel.transform).anchoredPosition = fullScreen ? messagePanelPos : new Vector2(messagePanelPos.x, 0f);
+    }
+
     void ShowResult(string title, string titleHex, string description, string buttonLabel, bool fullScreen)
     {
+        ApplyResultLayout(fullScreen);
         if (resultBackdrop != null)
             resultBackdrop.gameObject.SetActive(fullScreen);
         if (resultPanel != null) resultPanel.SetActive(fullScreen);

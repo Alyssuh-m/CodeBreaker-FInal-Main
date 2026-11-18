@@ -25,6 +25,7 @@ namespace CodeBreaker.Level2
         [Range(0f, 1f)] public float volume = 0.85f;
 
         AudioSource ui, world;
+        AudioClip tick, staticNoise, fanWhir, softClick;   // generated feedback sounds (puzzle pass)
 
         void Awake()
         {
@@ -52,6 +53,10 @@ namespace CodeBreaker.Level2
             if (success == null) success = L2ToneGen.Arpeggio();
             if (failure == null) failure = L2ToneGen.Buzz();
             if (musicBox == null) musicBox = L2ToneGen.MusicBox();
+            tick = L2ToneGen.Tick();
+            staticNoise = L2ToneGen.Static(1f);
+            fanWhir = L2ToneGen.Fan();
+            softClick = L2ToneGen.Click(900f, 0.07f);
         }
 
         float Vol => volume * CodeBreakerSettings.SfxVolume;
@@ -79,6 +84,11 @@ namespace CodeBreaker.Level2
         public void Success() => Play(success, 0.65f);
         public void Failure() => Play(failure, 0.5f);
         public void MusicBox(Vector3 pos) => PlayAt(musicBox, pos, 0.9f);
+        // feedback sounds added for the puzzle pass
+        public void Tick() => Play(tick, 0.95f);                          // loud clock tick (correct time)
+        public void SoftClick() => Play(softClick, 0.55f);                // quiet "this matters" click
+        public void Static(Vector3 pos) => PlayAt(staticNoise, pos, 0.8f); // TV static burst
+        public void Fan(Vector3 pos) => PlayAt(fanWhir, pos, 0.9f);       // fan spinning up
     }
 
     // Small generated placeholder sounds (no external assets).
@@ -155,6 +165,28 @@ namespace CodeBreaker.Level2
             }
             return s;
         });
+
+        public static AudioClip Tick() => Make("L2 Tick", 0.12f, t =>
+        {
+            float knock = Random.Range(-1f, 1f) * Mathf.Exp(-t / 0.003f);
+            float body = Mathf.Sin(2f * Mathf.PI * 1900f * t) * Mathf.Exp(-t / 0.012f) + 0.6f * Mathf.Sin(2f * Mathf.PI * 520f * t) * Mathf.Exp(-t / 0.03f);
+            return 0.85f * (0.5f * knock + 0.5f * body);
+        });
+
+        public static AudioClip Static(float len) => Make("L2 Static", len, t =>
+            0.35f * Random.Range(-1f, 1f) * Mathf.Clamp01(t / 0.01f) * Mathf.Clamp01((len - t) / 0.08f) * (0.75f + 0.25f * Mathf.Sin(2f * Mathf.PI * 60f * t)));
+
+        public static AudioClip Fan()
+        {
+            float lp = 0f;
+            return Make("L2 Fan", 1.6f, t =>
+            {
+                lp = Mathf.Lerp(lp, Random.Range(-1f, 1f), 0.12f);
+                float up = Mathf.Clamp01(t / 0.9f);
+                float hum = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(40f, 110f, up) * t);
+                return (1.4f * lp + 0.25f * hum) * up * Mathf.Clamp01((1.6f - t) / 0.4f) * 0.6f;
+            });
+        }
 
         public static AudioClip MusicBox() => Make("L2 Music Box", 6.5f, t =>
         {

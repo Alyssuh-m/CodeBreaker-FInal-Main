@@ -1,13 +1,24 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 // Code Breaker: player health + health bar.
 // Lives on the persistent "Game Session" object, so health carries over between rooms,
 // checkpoints and levels. It is only reset to full when a completely new game starts.
+// Health is a Level 1 mechanic (wrong doors). In the other levels (Level 2, Level 3) the health bar
+// is hidden and nothing can damage the player.
 public class PlayerHealth : MonoBehaviour
 {
+    // Scenes that use health. Everywhere else the health system is switched off.
+    public static readonly string[] HealthScenes = { "Level 1" };
+
+    public static bool UsedIn(string sceneName) => System.Array.IndexOf(HealthScenes, sceneName) >= 0;
+
+    /// <summary>False in levels without health (Level 2, Level 3): no damage, no health bar, no heartbeat.</summary>
+    public bool Active { get; private set; } = true;
+
     [Header("Health")]
     public float maxHealth = 100f;
 
@@ -16,6 +27,8 @@ public class PlayerHealth : MonoBehaviour
     public int[] wrongAnswerDamage = { 35, 35, 30 };
 
     [Header("Health Bar UI")]
+    [Tooltip("The whole health bar (hidden in levels without health). Empty = the parent of Health Text.")]
+    public GameObject healthBarRoot;
     [Tooltip("The coloured bar inside the health bar. Its width shrinks as health goes down.")]
     public Image healthFill;
     public TMP_Text healthText;
@@ -47,6 +60,33 @@ public class PlayerHealth : MonoBehaviour
         UpdateHealthUI();
         SetOverlayAlpha(0f);
         SetBlood(0f, 1f);
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        ApplyScene(SceneManager.GetActiveScene().name);
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (mode == LoadSceneMode.Single) ApplyScene(scene.name);
+    }
+
+    void ApplyScene(string sceneName)
+    {
+        Active = UsedIn(sceneName);
+        GameObject bar = healthBarRoot != null ? healthBarRoot
+                       : (healthText != null && healthText.transform.parent != null ? healthText.transform.parent.gameObject : null);
+        if (bar != null) bar.SetActive(Active);
+        if (!Active)
+        {
+            overlayAlpha = 0f;
+            bloodTimer = 0f;
+            SetOverlayAlpha(0f);
+            SetBlood(0f, 1f);
+        }
     }
 
     void Update()
@@ -78,7 +118,7 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount, string cause = "You lost all your health.", bool bloodSplatter = true)
     {
-        if (IsDead || amount <= 0f)
+        if (IsDead || amount <= 0f || !Active)
             return;
 
         CurrentHealth = Mathf.Max(0f, CurrentHealth - amount);
@@ -99,7 +139,7 @@ public class PlayerHealth : MonoBehaviour
     // Applies the damage for the next wrong answer (35, 35, 30) and returns the amount.
     public int TakeWrongAnswerDamage(string deathMessage)
     {
-        if (IsDead || wrongAnswerDamage == null || wrongAnswerDamage.Length == 0)
+        if (IsDead || !Active || wrongAnswerDamage == null || wrongAnswerDamage.Length == 0)
             return 0;
 
         int damage = wrongAnswerDamage[Mathf.Min(WrongAttempts, wrongAnswerDamage.Length - 1)];
@@ -112,7 +152,7 @@ public class PlayerHealth : MonoBehaviour
     // damage it is worth (35, 35, 30). The caller applies it gradually with TakeDamage.
     public int BeginWrongAnswer()
     {
-        if (IsDead || wrongAnswerDamage == null || wrongAnswerDamage.Length == 0)
+        if (IsDead || !Active || wrongAnswerDamage == null || wrongAnswerDamage.Length == 0)
             return 0;
 
         int damage = wrongAnswerDamage[Mathf.Min(WrongAttempts, wrongAnswerDamage.Length - 1)];

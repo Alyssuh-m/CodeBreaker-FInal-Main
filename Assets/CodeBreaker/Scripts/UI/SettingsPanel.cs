@@ -5,7 +5,8 @@ using TMPro;
 
 // Code Breaker: the Settings screen of the main menu.
 // Every control changes the real setting immediately and it is saved (see CodeBreakerSettings).
-//   Master / Music / Sound Effects volume, Mouse Sensitivity, Display Mode, Resolution, Graphics Quality.
+//   Master / Music / Sound Effects volume, Mouse Sensitivity.
+//   (Fullscreen, Resolution and Graphics Quality were removed from the menu; their fields stay empty.)
 public class SettingsPanel : MonoBehaviour
 {
     [Header("Audio")]

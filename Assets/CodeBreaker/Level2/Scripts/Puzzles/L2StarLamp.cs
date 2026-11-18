@@ -36,10 +36,19 @@ namespace CodeBreaker.Level2
             {
                 Game.SetFlag("lamp_on", LampOn);
                 if (Game.sfx != null) Game.sfx.Switch(transform.position);
-                if (LampOn && !ShadowActive)
-                    Game.Notify("The lamp glows, but the star on its shade throws only a blur. The room doesn't match the photo yet.", L2NoteKind.Info);
+                if (LampOn && !ShadowActive) Game.Notify(WhatIsWrong(), L2NoteKind.Info);
             }
             Refresh();
+        }
+
+        // Says which half of the photo still doesn't match (never how to fix it).
+        string WhatIsWrong()
+        {
+            bool clockOk = clock != null && clock.IsCorrect;
+            bool tvOk = tv != null && tv.IsBlue;
+            if (clockOk && !tvOk) return "The lamp glows. The clock is right... but the light in the room is wrong.";
+            if (tvOk && !clockOk) return "The lamp glows. The blue glow is right... but the time is wrong.";
+            return "The lamp glows, but the star on its shade throws only a blur. The room doesn't match the photo yet.";
         }
 
         void Update()

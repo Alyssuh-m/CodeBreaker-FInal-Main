@@ -76,6 +76,7 @@ namespace CodeBreaker.Level2
 
             if (player == null) { GameObject p = GameObject.FindWithTag("Player"); if (p != null) player = p.transform; }
             if (playerCamera == null) playerCamera = Camera.main;
+            if (GetComponent<LevelFootsteps>() == null) gameObject.AddComponent<LevelFootsteps>();   // footsteps like Level 1
             FindControls();
 
             foreach (L2Pickup p in FindObjectsByType<L2Pickup>(FindObjectsInactive.Include))
@@ -340,36 +341,137 @@ namespace CodeBreaker.Level2
             if (rules != null) return rules.Objective(this, out hint);
             if (Completed || Flag("level_complete")) return "Level 2 complete!";
 
+            // Step by step: the objective names the next concrete thing to do, the hint below it says
+            // where to look (never the answer). StuckNudge adds one more pointer after ~3 minutes.
             if (!Flag("exit_living"))
             {
                 if (HasItem(L2Items.LivingKey) || doorUnlocked("Door_LivingRoom_Exit"))
                     return "Unlock the Living Room exit.";
-                if (!Flag("photo_assembled")) hint = "Torn photo pieces found: " + PhotoPiecesFound() + " / 4";
-                else if (!Flag("star_shadow_seen")) hint = "Make the room match the family photo.";
-                else if (!Flag("star_placed")) hint = "Follow the star.";
-                else hint = "The blue book has something for you.";
-                return "Find a way to unlock the Living Room exit.";
+                if (!Flag("photo_assembled"))
+                {
+                    int found = PhotoPiecesFound();
+                    if (found == 4) { hint = "Open the inventory (V) and press Assemble."; return "Assemble the family photo."; }
+                    hint = "Photo pieces: " + found + " / 4. Search every drawer and cabinet in this room.";
+                    if (StuckNudge) hint += "\nSearched places say \"Empty\". Check the ones you haven't opened yet.";
+                    return "Find the 4 torn photo pieces.";
+                }
+                if (!Flag("star_shadow_seen"))
+                {
+                    if (!Flag("clock_confirmed_8"))
+                    {
+                        hint = "A photo piece says clock = 1000. The chart by the TV explains numbers written like that.";
+                        if (StuckNudge) hint += "\nPress E on the wall clock to move its hands.";
+                        return "Set the wall clock to the time in the photo.";
+                    }
+                    if (!(Flag("tv_on") && GetInt("tv_channel", 1) == 3))
+                    {
+                        bool batteries = Flag("remote_batteries");
+                        hint = batteries ? "A photo piece says channel = 0011. Read it with the chart by the TV, then use the remote."
+                                         : "A photo piece says channel = 0011. The remote is dead: its batteries are hidden in this room.";
+                        return "Put the TV on the channel from the photo.";
+                    }
+                    hint = "The note by the door: if (clock == 8 && tv.channel == 3) the star shines.";
+                    return "Switch on the star lamp.";
+                }
+                if (!Flag("star_placed"))
+                {
+                    if (!HasItem(L2Items.StarFigurine) && !IsCollected(L2Items.StarFigurine))
+                    {
+                        hint = "The star's shadow points at a slot on the bookshelf. Something star-shaped is hidden in this room.";
+                        return "Find something star-shaped.";
+                    }
+                    hint = "Hold the star figurine and use it on the slot the shadow points to.";
+                    return "Put the star where the shadow falls.";
+                }
+                hint = "The blue book on the shelf has come loose.";
+                return "Take what the blue book was holding.";
             }
 
             if (!Flag("exit_bedroom"))
             {
                 if (HasItem(L2Items.BedroomKey) || doorUnlocked("Door_Bedroom_Exit")) return "Unlock the Bedroom exit.";
-                if (!Flag("read_diary")) hint = "Start with the diary on the bed.";
-                else if (Flag("moon_seen") && Flag("moonbox_open") && Flag("stars_seen")) hint = "Everything points to the jewellery box.";
-                else hint = "\"Under the MOON, follow the dancer, count the stars.\"";
-                return "Investigate the Bedroom.";
+                if (!Flag("read_diary")) { hint = "It's on the bed. It reads like a little program."; return "Read the diary."; }
+                if (!Flag("moon_seen"))
+                {
+                    if (!HasItem(L2Items.UVFlashlight) && !IsCollected(L2Items.UVFlashlight))
+                    {
+                        hint = "Some writing here is in invisible ink. A UV flashlight is hidden in this room.";
+                        return "Find the UV flashlight.";
+                    }
+                    hint = "Hold the UV flashlight (G switches it on) and shine it on something that reflects.";
+                    return "Look for hidden writing with the UV light.";
+                }
+                if (!Flag("moonbox_open"))
+                {
+                    hint = Flag("dance_seen") ? "Enter the dancer's moves on the moon box lock, in the same order."
+                                              : "Open the music box, wind it up and watch the dancer: every move is an arrow.";
+                    return "Open the moon box with the dancer's moves.";
+                }
+                if (!Flag("stars_seen"))
+                {
+                    hint = "The note in the moon box: turn off the lights and look up.";
+                    if (StuckNudge) hint += "\nSwitch off the bedroom light and look at the ceiling.";
+                    return "Count the stars in the dark.";
+                }
+                hint = "open(drawer[stars - 1]);  arrays start at 0, so drawer[0] is the bottom drawer.";
+                return "Open the right jewellery box drawer.";
             }
 
             if (!Flag("exit_kitchen"))
             {
                 if (HasItem(L2Items.KitchenKey) || doorUnlocked("Door_Kitchen_Exit")) return "Unlock the Kitchen exit.";
-                hint = "Follow Grandma's recipe.";
-                return "Find the Kitchen Key.";
+                if (!Flag("recipe_complete"))
+                {
+                    if (!Flag("read_recipe")) { hint = "Her recipe book lies open on the counter."; return "Read Grandma's recipe."; }
+                    hint = "One ingredient is missing from her function: the one that comes in a carton of 6.";
+                    return "Complete Grandma's recipe.";
+                }
+                if (!Flag("oven_open"))
+                {
+                    int seen = 0;
+                    foreach (string ing in new[] { "flour", "sugar", "eggs", "milk" }) if (Flag("seen_" + ing)) seen++;
+                    if (seen < 4)
+                    {
+                        hint = "Checked: " + seen + " / 4. Lift the flour, sugar, eggs and milk and read underneath.";
+                        return "Check under each ingredient.";
+                    }
+                    hint = "Each label is a variable: the name on the left holds the value on the right. Start with the one you already know.";
+                    if (StuckNudge) hint += "\nThe recipe ends with oven.Set(flour, sugar, eggs, milk). Your notes (J) list every label.";
+                    return "Work out each value and set the oven timer.";
+                }
+                hint = "The oven door is open.";
+                return "Take what is inside the oven.";
             }
 
-            hint = "Who do they love most? Which year are they proudest of?";
-            return "Unlock the workstation.";
+            int checks = GetInt("terminal_checks", 0);
+            if (checks < 2)
+            {
+                hint = checks == 0 ? "It asks for something you found in the Living Room." : "It asks for something you counted in the Bedroom.";
+                return "Answer the computer's checks.";
+            }
+            if (!Flag("picture_decoded"))
+            {
+                hint = StuckNudge ? "Use the picture wheel on the desk.\nThe whiteboard says what each picture means." : "Use the picture wheel. The whiteboard is the key.";
+                return "Decode the picture note on the desk.";
+            }
+            hint = StuckNudge ? "Who do they love? The dog's collar has its name.\nThe best year hangs on the wall." : "Find who they love most and their proudest year.";
+            return "Log in to the computer.";
         }
+
+        // One step more specific, shown only after a long time without progress (never the answer).
+        string BedroomNudge()
+        {
+            if (!Flag("moon_seen")) return "Shine the UV flashlight on something that reflects.";
+            if (!Flag("moonbox_open")) return "Watch the music box dancer: her moves open the moon box.";
+            if (!Flag("stars_seen")) return "The stars only shine in the dark.";
+            return "";
+        }
+
+        // Set by L2LevelSession after about 3 minutes without progress; cleared on the next progress.
+        public bool StuckNudge { get; set; }
+
+        // Changes whenever something is found, read, solved or used (used to detect "stuck").
+        public int ProgressStamp => flags.Count * 7 + inventory.Count * 131 + collected.Count * 1031 + ints.Count;
 
         bool doorUnlocked(string doorName) => doorStates.TryGetValue(doorName, out L2DoorEntry e) && !e.locked;
 
@@ -491,6 +593,37 @@ namespace CodeBreaker.Level2
             d.checkpointLabel = checkpointLabel;
             d.checkpointJson = JsonUtility.ToJson(BuildState());
             SaveSystem.Save(d);
+        }
+
+        // ------------------------------------------------------------------ notes journal reset
+        // Flags that only feed the Notes journal (J): notes read ("read:...") and ingredient labels
+        // lifted in the Level 2 kitchen ("seen_..."). Puzzle progress never uses these prefixes.
+        static readonly string[] NotePrefixes = { L2Examine.NoteFlagPrefix, "seen_" };
+
+        public static bool IsNoteFlag(string f)
+        {
+            if (string.IsNullOrEmpty(f)) return false;
+            foreach (string p in NotePrefixes) if (f.StartsWith(p, System.StringComparison.Ordinal)) return true;
+            return false;
+        }
+
+        // Called when an attempt fails (time up / game over). That playthrough's notes are dropped from
+        // memory and from the saved checkpoint, so Try Again, Continue or a restart opens an empty Notes
+        // journal. Everything else in the checkpoint (solved puzzles, items, doors, timer) is kept as is.
+        // It is never called while the player is still playing, so current notes are never lost.
+        public void ForgetNotes()
+        {
+            flags.RemoveWhere(IsNoteFlag);
+            SaveData d = SaveSystem.Load();
+            if (d == null || !SaveSystem.HasCheckpoint(d, SceneName)) return;
+            try
+            {
+                L2State s = JsonUtility.FromJson<L2State>(d.checkpointJson);
+                if (s == null || s.flags.RemoveAll(IsNoteFlag) == 0) return;
+                d.checkpointJson = JsonUtility.ToJson(s);
+                SaveSystem.Save(d);
+            }
+            catch (System.Exception e) { Debug.LogWarning("[" + SceneName + "] Could not clear the notes in the checkpoint: " + e.Message); }
         }
 
         // ------------------------------------------------------------------ level end & restarts
