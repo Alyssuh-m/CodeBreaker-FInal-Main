@@ -1,0 +1,7 @@
+Fonts used by the Code Breaker menus (all free for commercial and non-commercial use):
+
+Creepster-Regular.ttf     Copyright (c) 2011 Font Diner, Inc.          SIL Open Font License 1.1
+Oswald-Medium/Light.ttf   Copyright 2016 The Oswald Project Authors    SIL Open Font License 1.1
+SpecialElite-Regular.ttf  Copyright (c) 2010 Astigmatic (AOETI)         Apache License 2.0
+
+Source: Google Fonts (via the @fontsource packages). Full license texts: https://openfontlicense.org , https://www.apache.org/licenses/LICENSE-2.0
