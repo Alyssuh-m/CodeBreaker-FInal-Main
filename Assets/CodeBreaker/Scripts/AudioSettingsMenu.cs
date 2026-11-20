@@ -1,16 +1,23 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 // Code Breaker: in-game audio settings (keyboard only, no mouse or EventSystem needed).
 //   Tab        open / close (the game pauses while it is open)
 //   Up / Down  choose Music or Sound Effects
 //   Left/Right lower / raise the volume in 10% steps
+// Tab is turned off in scenes listed in tabDisabledInScenes (Level 2 already has the full
+// Settings menu: Esc > Settings, with the same audio sliders), and the Tab hint is hidden there.
 public class AudioSettingsMenu : MonoBehaviour
 {
     public GameObject panel;
     public TMP_Text musicRow;
     public TMP_Text sfxRow;
     public KeyCode toggleKey = KeyCode.Tab;
+    [Tooltip("Scenes where Tab does NOT open this menu (they have their own Settings menu with the audio controls).")]
+    public string[] tabDisabledInScenes = { "Level 2" };
+    [Tooltip("The small 'TAB  Audio settings' hint on the HUD (found by name if empty).")]
+    public GameObject tabHint;
 
     public bool IsOpen { get; private set; }
 
@@ -19,12 +26,30 @@ public class AudioSettingsMenu : MonoBehaviour
     void Start()
     {
         if (panel != null) panel.SetActive(false);
+        if (tabHint == null) tabHint = GameObject.Find("Audio Hint");
+    }
+
+    bool TabDisabledHere()
+    {
+        if (tabDisabledInScenes == null) return false;
+        string scene = SceneManager.GetActiveScene().name;
+        foreach (string s in tabDisabledInScenes)
+            if (s == scene) return true;
+        return false;
     }
 
     void Update()
     {
         GameFlowManager gm = GameFlowManager.Instance;
         bool canOpen = gm == null || (!gm.IsGameOver && !gm.GameCompleted && !gm.IsTransitioning && !gm.IsBusy && !gm.LevelCompleteShown);
+
+        bool tabOff = TabDisabledHere();
+        if (tabHint != null && tabHint.activeSelf == tabOff) tabHint.SetActive(!tabOff);
+        if (tabOff)
+        {
+            if (IsOpen) Close();
+            return;
+        }
 
         if (Input.GetKeyDown(toggleKey))
         {

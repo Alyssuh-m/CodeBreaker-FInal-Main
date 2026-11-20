@@ -92,6 +92,14 @@ public class LecternQuestion : MonoBehaviour
         if (questionText == null)
             return;
 
+        // Large, centred question only. The answer choices are shown on the doors, not here.
+        questionText.alignment = TextAlignmentOptions.Center;          // horizontal + vertical centre
+        questionText.textWrappingMode = TextWrappingModes.Normal;
+        questionText.overflowMode = TextOverflowModes.Overflow;
+        questionText.enableAutoSizing = true;                          // shrinks only if a long question would not fit
+        questionText.fontSizeMin = 22f;
+        questionText.fontSizeMax = 46f;
+
         if (question == null)
         {
             questionText.text = "<i>The page is blank...</i>";
@@ -99,11 +107,9 @@ public class LecternQuestion : MonoBehaviour
         }
 
         questionText.text =
-            "<size=75%><b>" + roomName.ToUpper() + "</b></size>\n\n" +
+            "<size=55%>" + roomName.ToUpper() + "</size>\n\n" +
             "<b>" + question.question + "</b>\n\n" +
-            "<b>A.</b> " + question.answerA + "\n\n" +
-            "<b>B.</b> " + question.answerB + "\n\n" +
-            "<size=65%><i>Go through the door that shows your answer.\nPress E to close.</i></size>";
+            "<size=45%><i>Press E to close</i></size>";
     }
 
     void OnTriggerEnter(Collider other)
