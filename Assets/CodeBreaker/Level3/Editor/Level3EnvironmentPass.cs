@@ -41,10 +41,22 @@ namespace CodeBreaker.Level3.EditorTools
                 if (File.Exists(pt6)) { File.Delete(pt6); StartPlayTest6(Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Level3_Phase6")); }
                 string pt7 = Path.Combine(dir, "run_playtest7");
                 if (File.Exists(pt7)) { File.Delete(pt7); StartPlayTest7(Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Level3_Phase7")); }
+                string pt8 = Path.Combine(dir, "run_playtest8");
+                if (File.Exists(pt8)) { File.Delete(pt8); StartPlayTest8(Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Level3_Phase8")); }
+                string pt9 = Path.Combine(dir, "run_playtest9");
+                if (File.Exists(pt9)) { File.Delete(pt9); StartPlayTest9(Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Level3_Phase9")); }
+                string pt10 = Path.Combine(dir, "run_playtest10");
+                if (File.Exists(pt10)) { File.Delete(pt10); StartPlayTest10(null); }
+                string pf10 = Path.Combine(dir, "run_perf10");
+                if (File.Exists(pf10)) { File.Delete(pf10); StartPerf10(); }
+                string pb10 = Path.Combine(dir, "run_perfbase10");
+                if (File.Exists(pb10)) { File.Delete(pb10); StartPerfBase10(); }
+                string shu = Path.Combine(dir, "run_shutest");
+                if (File.Exists(shu)) { File.Delete(shu); StartProgressTest(); }
                 return;
             }
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-            foreach (string cmd in new[] { "run_build", "run_capture", "run_undo", "run_build3", "run_capture3", "run_undo3", "run_build4", "run_capture4", "run_undo4", "run_build5", "run_undo5", "run_build6", "run_undo6", "run_build7", "run_capture7", "run_undo7" })
+            foreach (string cmd in new[] { "run_build", "run_capture", "run_undo", "run_build3", "run_capture3", "run_undo3", "run_build4", "run_capture4", "run_undo4", "run_build5", "run_undo5", "run_build6", "run_undo6", "run_build7", "run_capture7", "run_undo7", "run_dump8", "run_build8", "run_undo8", "run_check8", "run_build9", "run_undo9", "run_check10", "run_dumpsave" })
             {
                 string f = Path.Combine(dir, cmd);
                 if (!File.Exists(f)) continue;
@@ -64,7 +76,15 @@ namespace CodeBreaker.Level3.EditorTools
                 else if (cmd == "run_undo6") UndoPhase6();
                 else if (cmd == "run_build7") Build7();
                 else if (cmd == "run_capture7") Capture7();
-                else UndoPhase7();
+                else if (cmd == "run_undo7") UndoPhase7();
+                else if (cmd == "run_dump8") Dump8();
+                else if (cmd == "run_build8") Build8();
+                else if (cmd == "run_check8") Check8();
+                else if (cmd == "run_undo8") UndoPhase8();
+                else if (cmd == "run_build9") Build9();
+                else if (cmd == "run_check10") Check10();
+                else if (cmd == "run_dumpsave") DumpSave();
+                else UndoPhase9();
                 File.WriteAllText(Path.Combine(dir, "done_" + cmd + ".txt"), System.DateTime.Now.ToString("o"));
                 return;
             }

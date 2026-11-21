@@ -326,26 +326,79 @@ namespace CodeBreaker.Level2
             return n;
         }
 
+        // Smart hints: always about the FIRST puzzle that is not solved yet (PuzzleBook order), so a
+        // solved puzzle never gets a hint. Each puzzle has up to two hints, the second more direct.
+        // Each new hint costs score (counted per room, as before); repeating the last one is free.
+        // When everything is solved, a free message says so.
+        public const string AllSolvedMessage = "You have already completed all puzzles in this level!";
+
+        static readonly Dictionary<string, string[]> PuzzleHints = new Dictionary<string, string[]>
+        {
+            { "living_photo", new[] {
+                "Search every drawer and cabinet in this room for the four torn photo pieces.",
+                "Once you have all four pieces, open the inventory (V) and press Assemble. The finished photo shows how this room looked that evening." } },
+            { "living_starlamp", new[] {
+                "Two photo pieces have writing on the back: clock = 1000 and channel = 0011. Those are binary numbers. The poster by the TV shows the place values 8 4 2 1: add up the places that have a 1. The TV remote needs batteries hidden in this room.",
+                "Clock = 8:00 and TV = channel 3, then switch on the star lamp." } },
+            { "living_star", new[] {
+                "The star's shadow points at a slot on the bookshelf. Something star-shaped is hidden in this room.",
+                "Hold the star figurine and use it on the slot the shadow points to." } },
+            { "living_exit", new[] {
+                "The blue book on the shelf has come loose. Take what it was holding and unlock the Living Room exit." } },
+            { "bedroom_uv", new[] {
+                "Read the diary on the bed: it is a little program. Find the UV flashlight hidden in this room. Something here only shows under UV light.",
+                "Hold the UV flashlight (G switches it on) and shine it on the mirror." } },
+            { "bedroom_moonbox", new[] {
+                "Open and wind the music box, then watch the dancer: every move is an arrow.",
+                "The dancer's moves (UP, RIGHT, RIGHT, DOWN) open the moon box. Enter them on its lock in that order." } },
+            { "bedroom_stars", new[] {
+                "The note in the moon box says: lights off, look up.",
+                "Switch off the bedroom light and count the glowing stars on the ceiling." } },
+            { "bedroom_exit", new[] {
+                "open(drawer[stars - 1]) with arrays starting at 0: count from the bottom drawer, which is drawer[0].",
+                "Open that jewellery box drawer, take the key and unlock the Bedroom exit." } },
+            { "kitchen_recipe", new[] {
+                "Read Grandma's recipe on the counter. One ingredient is missing: the one that comes in a carton of 6. Completing the recipe unlocks the oven timer." } },
+            { "kitchen_oven", new[] {
+                "Lift the flour, sugar, eggs and milk and read underneath. Each label is a variable: \"milk = sugar * 2\" means milk holds two times whatever sugar holds. Only one label is a plain number. Start there.",
+                "sugar is 1. Work out milk and flour from it, then eggs = flour + milk. Type the four values in the order oven.Set(flour, sugar, eggs, milk) asks for them." } },
+            { "kitchen_exit", new[] {
+                "The oven door is open. Take what is inside and unlock the Kitchen exit." } },
+            { "study_checks", new[] {
+                "The computer first checks what you learned: the TV channel (Living Room) and the number of stars (Bedroom). Your notes (J) remember them." } },
+            { "study_picture", new[] {
+                "The note on the desk is written in pictures. The whiteboard is the picture key: heart = who I love, paw = my dog, calendar = my best year.",
+                "Match the pictures on the picture wheel to decode the note." } },
+            { "study_login", new[] {
+                "The heart is the dog: its collar has its name. The best year is on the certificate on the wall. Type the name and the year together." } },
+        };
+
         public void ShowHint()
         {
             L2Game g = G;
-            if (g == null || g.ui == null || g.Completed) return;
-            string room = CurrentRoom();
-            string[] list = HintsFor(room);
-            if (list == null || list.Length == 0) return;
-            int used = g.GetInt("hints_" + room, 0);
+            if (g == null || g.ui == null) return;
+            PuzzleBook.Puzzle next = g.Completed ? null : PuzzleBook.FirstUnsolved(g.SceneName, g.Flag, g.GetInt);
+            if (next == null || !PuzzleHints.TryGetValue(next.key, out string[] list) || list.Length == 0)
+            {
+                if (g.sfx != null) g.sfx.Click();
+                g.ui.ShowInfo("HINT", AllSolvedMessage + "\n\n<color=#9A918A>No score was taken.</color>");
+                return;
+            }
+            string room = next.room;
+            int used = g.GetInt("hintp_" + next.key, 0);
             int index;
             string costLine;
             if (used < list.Length)
             {
                 index = used;
-                g.SetInt("hints_" + room, used + 1);
-                costLine = "<color=#9A918A>Hint " + (index + 1) + " of " + list.Length + "  ·  -" + hintPenalty + " score</color>";
+                g.SetInt("hintp_" + next.key, used + 1);
+                g.SetInt("hints_" + room, g.GetInt("hints_" + room, 0) + 1);   // score counts hints per room
+                costLine = "<color=#9A918A>Hint " + (index + 1) + " of " + list.Length + " for this puzzle  ·  -" + hintPenalty + " score</color>";
             }
             else
             {
                 index = list.Length - 1;
-                costLine = "<color=#9A918A>No more hints for this room (shown again for free).</color>";
+                costLine = "<color=#9A918A>No more hints for this puzzle (shown again for free).</color>";
             }
             if (g.sfx != null) g.sfx.Click();
             g.ui.ShowInfo("HINT  ·  " + RoomName(room).ToUpperInvariant(), list[index] + "\n\n" + costLine);

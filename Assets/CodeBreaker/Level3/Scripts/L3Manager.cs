@@ -123,18 +123,26 @@ namespace CodeBreaker.Level3
         // ------------------------------------------------------------------ notes journal (J)
         // Every station result is written down once it is solved, so nothing has to be remembered or
         // re-checked. Notes that were read are copied below. Saved automatically (it is built from flags).
-        static readonly (string station, string text)[] JournalLines =
+        // Built from this playthrough's puzzle values (Phase 8: L3Puzzle.Current; the original values when not randomised).
+        static (string station, string text)[] JournalLines
         {
-            ("m1",   "Laptop:  locker2 = 8"),
-            ("m2",   "Red locker:  fanSpeed = 6  (the only valid name)"),
-            ("m3",   "Fuse box:  x = fuse 9"),
-            ("gen",  "Generator:  start code 869  ->  RED keycard  (m = 9)"),
-            ("s1",   "Camera wall:  CAM 4"),
-            ("s2",   "Symbol cabinet:  17 % 5 = 2,  9 * 3 = 27,  8 / 2 = 4"),
-            ("s3",   "Safe:  PIN 42  ->  BLUE keycard  (s = 4)"),
-            ("c2",   "Console:  online = 5"),
-            ("c3",   "Reboot:  fan 3, COOLING -> BACKUP -> REBOOT  ->  GREEN keycard  (c = 5)"),
-        };
+            get
+            {
+                L3PuzzleSet p = L3Puzzle.Current;
+                return new (string, string)[]
+                {
+                    ("m1",   "Laptop:  locker2 = " + p.LaptopAnswer),
+                    ("m2",   "Red locker:  fanSpeed = " + p.fanSpeed + "  (the only valid name)"),
+                    ("m3",   "Fuse box:  x = fuse " + p.fuseX),
+                    ("gen",  "Generator:  start code " + p.GeneratorCode + "  ->  RED keycard  (m = " + p.M + ")"),
+                    ("s1",   "Camera wall:  CAM " + p.cam),
+                    ("s2",   "Symbol cabinet:  " + p.LineSolved(0) + ",  " + p.LineSolved(1) + ",  " + p.LineSolved(2)),
+                    ("s3",   "Safe:  PIN " + p.Pin + "  ->  BLUE keycard  (s = " + p.S + ")"),
+                    ("c2",   "Console:  online = " + p.Online),
+                    ("c3",   "Reboot:  fan 3, COOLING -> BACKUP -> REBOOT  ->  GREEN keycard  (c = " + p.C + ")"),
+                };
+            }
+        }
 
         public void ShowJournal()
         {
@@ -162,7 +170,7 @@ namespace CodeBreaker.Level3
         // Opening a locker writes "lockerN = value" into the notes and onto his laptop screen. The flags
         // use the notes prefix, so a failed attempt forgets them like any other note.
         public static readonly string[] RamosLockerNames = { "locker1", "locker2", "locker3" };
-        public static readonly int[] RamosLockerValues = { 8, 2, 5 };   // the cards built into the lockers
+        public static readonly int[] RamosLockerValues = { 8, 2, 5 };   // the cards in the lockers (set each run by L3PuzzleValues)
         static string LockerFlag(int i) => L2Examine.NoteFlagPrefix + "ramos_" + RamosLockerNames[i];
 
         L2Openable[] ramosLockers;
@@ -473,17 +481,28 @@ namespace CodeBreaker.Level3
                 return new Step("s2", "Open the security cabinet with the missing operators.",
                     "Three lines of the shift log are missing their operator. Enter the three symbols on the cabinet keypad, in order.",
                     "Three lines on the shift log are missing their operator (+  -  *  /  %). Find the one that makes each line true.",
-                    "% gives what is LEFT OVER after dividing: 17 % 5 = 2 because 17 = 3 x 5 + 2.",
-                    "17 ? 5 = 2 needs %. 9 ? 3 = 27 needs a multiply. 8 ? 2 = 4 needs a divide. Enter them in that order.");
+                    ModHint(L3Puzzle.Current),
+                    LinesHint(L3Puzzle.Current));
             if (!Solved("s3"))
                 return new Step("s3", "Open the safe.",
                     "Set the switches so the rule card's if is true, then enter the PIN from the note. cam = the camera you flagged.",
                     "The cabinet holds a switch rule card and a PIN note. Both are needed for the safe on the south wall.",
                     "|| needs only ONE side true, ! flips true to false. So: isGuard or hasBadge ON, and alarmOn OFF.",
-                    "PIN = cam * 10 + (17 % 5). cam is the number of the camera you flagged at the camera wall, and 17 % 5 is the leftover from before.");
+                    "PIN = cam * 10 + (" + L3Puzzle.Current.ModA + " % " + L3Puzzle.Current.ModB + "). cam is the number of the camera you flagged at the camera wall, and " + L3Puzzle.Current.ModA + " % " + L3Puzzle.Current.ModB + " is the leftover from the shift log.");
             return new Step("blue", "Take the BLUE keycard from the safe.",
                 "The safe is open. The keycard is inside.",
                 "The safe is open. Take the BLUE keycard from inside.");
+        }
+
+        static string ModHint(L3PuzzleSet p) =>
+            "% gives what is LEFT OVER after dividing: " + p.ModA + " % " + p.ModB + " = " + p.ModR + " because " + p.ModA + " = " + (p.ModA / p.ModB) + " x " + p.ModB + " + " + p.ModR + ".";
+
+        static string LinesHint(L3PuzzleSet p)
+        {
+            var parts = new List<string>();
+            for (int i = 0; i < 3; i++)
+                parts.Add(p.Line(i) + " needs " + (p.ops[i] == '%' ? "%" : p.ops[i] == '*' ? "a multiply" : "a divide"));
+            return string.Join(". ", parts) + ". Enter them in that order.";
         }
 
         Step CtrlStep(L2Game g)
@@ -516,13 +535,6 @@ namespace CodeBreaker.Level3
         // Up to three hints for the current step, each a little more direct. Every new hint costs time.
         public float hintTimeCost = 15f;
 
-        static readonly string[] MainHints =
-        {
-            "The central terminal needs three keycards: RED from Maintenance (west), BLUE from Security (east), GREEN from Control (north). Each wing is a chain of small code puzzles.",
-            "Walk into a wing: your objective then shows that wing's next step. Your notes (J) keep every result you solve.",
-            "Pick any wing whose card you don't have yet. Take the flashlight from the terminal desk: some rooms are dark until their power is back.",
-        };
-
         static readonly string[] TerminalHints =
         {
             "Each keycard put its value into the terminal's code: m, s and c.",
@@ -530,17 +542,57 @@ namespace CodeBreaker.Level3
             "The condition is true, so exitCode = m * 10 + s. Work it out with the values on the screen.",
         };
 
+        static readonly string[] InsertHints =
+        {
+            "All three keycards are yours. The central terminal stands in the middle of the main hall: insert each keycard into its slot.",
+        };
+
+        // The first wing (Maintenance, Security, Control) whose keycard is not collected yet, and its next step.
+        public Step NextWingStep(L2Game g, out string wing)
+        {
+            wing = null;
+            if (!g.IsCollected(L2Items.KeycardRed)) { wing = "maint"; return MaintStep(g); }
+            if (!g.IsCollected(L2Items.KeycardBlue)) { wing = "sec"; return SecStep(g); }
+            if (!g.IsCollected(L2Items.KeycardGreen)) { wing = "ctrl"; return CtrlStep(g); }
+            return null;
+        }
+
+        static string WingWay(string wing) =>
+            wing == "maint" ? "the Maintenance wing (west)" : wing == "sec" ? "the Security wing (east)" : wing == "ctrl" ? "the Control wing (north)" : "the main hall";
+
+        public const string AllSolvedMessage = "You have already completed all puzzles in this level!";
+
+        // Smart hints: always about the first unsolved puzzle.
+        //  - all three keycards inserted: the central terminal;
+        //  - standing in a wing whose keycard is still missing: that wing's next step;
+        //  - anywhere else (main hall, or a finished wing): the next step of the first unfinished wing;
+        //  - all keycards collected: insert them;  everything solved: a free "all done" message.
+        // Each new hint for a step costs time; repeating the last one is free.
         public void ShowHint()
         {
             L2Game g = G;
-            if (g == null || g.ui == null || g.Completed || timeUp) return;
-            string key; string[] list; string title;
+            if (g == null || g.ui == null || timeUp) return;
+            if (g.Completed || Solved("term"))
+            {
+                if (g.sfx != null) g.sfx.Click();
+                g.ui.ShowInfo("HINT", AllSolvedMessage + "\n\n<color=#9A918A>No time was taken.</color>");
+                return;
+            }
+            string key; string[] list; string title; string lead = "";
             int inserted = 0;
             foreach (string c in new[] { "card_red_in", "card_blue_in", "card_green_in" }) if (g.Flag(c)) inserted++;
             Step st = CurrentStep(g);
-            if (inserted == 3 && !Solved("term")) { key = "term"; list = TerminalHints; title = "CENTRAL TERMINAL"; }
+            if (inserted == 3) { key = "term"; list = TerminalHints; title = "CENTRAL TERMINAL"; }
             else if (st != null) { key = st.key; list = st.hints; title = WingTitle(PlayerWing()); }
-            else { key = "main"; list = MainHints; title = "SERVER ROOM"; }
+            else if ((st = NextWingStep(g, out string wing)) != null)
+            {
+                key = st.key; list = st.hints; title = WingTitle(wing);
+                lead = "<color=#E8C547>Next: " + st.objective + " Go to " + WingWay(wing) + ".</color>\n";
+                if (!g.HasItem(L2Items.Flashlight) && !g.IsCollected(L2Items.Flashlight))
+                    lead += "<color=#E8C547>Take the flashlight from the terminal desk first.</color>\n";
+                lead += "\n";
+            }
+            else { key = "insert"; list = InsertHints; title = "CENTRAL TERMINAL"; }
 
             int used = g.GetInt("l3hint_" + key, 0);
             int index; string cost;
@@ -562,7 +614,7 @@ namespace CodeBreaker.Level3
                 cost = "<color=#9A918A>No more hints for this step (shown again for free).</color>";
             }
             if (g.sfx != null) g.sfx.Click();
-            g.ui.ShowInfo("HINT  ·  " + title, list[index] + "\n\n" + cost);
+            g.ui.ShowInfo("HINT  ·  " + title, lead + list[index] + "\n\n" + cost);
         }
 
         static string WingTitle(string wing) => wing == "maint" ? "MAINTENANCE" : wing == "sec" ? "SECURITY" : wing == "ctrl" ? "CONTROL" : "SERVER ROOM";

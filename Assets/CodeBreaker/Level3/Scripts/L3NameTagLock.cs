@@ -27,7 +27,7 @@ namespace CodeBreaker.Level3
         void Start()
         {
             if (Solved) L3Reaction.RunAll(onSolved, true);
-            SetScreen(Solved ? "VALID NAME\nfanSpeed = 6" : "LOCKED\nINSERT NAME TAG", Solved ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.75f, 0.3f));
+            SetScreen(Solved ? "VALID NAME\nfanSpeed = " + L3Puzzle.Current.fanSpeed : "LOCKED\nINSERT NAME TAG", Solved ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.75f, 0.3f));
         }
 
         void SetScreen(string t, Color c)
@@ -60,8 +60,8 @@ namespace CodeBreaker.Level3
                 g.RemoveItem(itemId);
                 M.Solve(station);
                 M.Good();
-                SetScreen("VALID NAME\nfanSpeed = 6", new Color(0.4f, 1f, 0.5f));
-                g.Notify("fanSpeed is a valid C# name. The red locker unbolts (value 6).", L2NoteKind.Success);
+                SetScreen("VALID NAME\nfanSpeed = " + L3Puzzle.Current.fanSpeed, new Color(0.4f, 1f, 0.5f));
+                g.Notify("fanSpeed is a valid C# name. The red locker unbolts (value " + L3Puzzle.Current.fanSpeed + ").", L2NoteKind.Success);
                 L3Reaction.RunAll(onSolved, false);
                 return true;
             }

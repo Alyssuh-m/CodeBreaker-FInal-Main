@@ -6,7 +6,7 @@ using CodeBreaker.Level2;
 namespace CodeBreaker.Level3
 {
     // The six-monitor camera wall:  alarm = (motion > 3) && (door == OPEN);
-    // The player presses the desk button of the camera that made alarm true (CAM 4).
+    // The player presses the desk button of the camera that made alarm true (CAM 4 originally; Phase 8 picks it per run).
     // The correct button zooms CAM 4's feed in on a dark figure that walks out of view.
     public class L3CameraWall : MonoBehaviour
     {
@@ -107,7 +107,9 @@ namespace CodeBreaker.Level3
             TMP_Text o = index4Overlay();
             if (o != null)
             {
-                o.text = "CAM " + correctIndex + "\nmotion = 5\ndoor = OPEN\n<color=#FF4040>ALARM = TRUE</color>";
+                L3PuzzleSet p = L3Puzzle.Current;
+                int motion = correctIndex >= 1 && correctIndex <= p.motion.Length ? p.motion[correctIndex - 1] : 5;
+                o.text = "CAM " + correctIndex + "\nmotion = " + motion + "\ndoor = OPEN\n<color=#FF4040>ALARM = TRUE</color>";
             }
         }
 

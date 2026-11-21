@@ -85,12 +85,13 @@ namespace CodeBreaker.Level2
             // Continue from a checkpoint? (Load Saved Games from the menu, or Try Again.)
             SaveData pending = SaveSystem.PendingLoad;
             bool resume = SaveSystem.ResumeCheckpoint || (pending != null && pending.sceneName == SceneName);
+            resumed = resume;
             if (resume)
             {
-                SaveData d = SaveSystem.Load();
-                if (SaveSystem.HasCheckpoint(d, SceneName))
+                LevelCheckpoint cp = SaveSystem.GetCheckpoint(SaveSystem.Load(), SceneName);   // this level's own checkpoint
+                if (cp != null)
                 {
-                    try { LoadedState = JsonUtility.FromJson<L2State>(d.checkpointJson); }
+                    try { LoadedState = JsonUtility.FromJson<L2State>(cp.json); }
                     catch (System.Exception e) { Debug.LogWarning("[Level 2] Could not read the checkpoint: " + e.Message); }
                 }
             }
@@ -102,8 +103,25 @@ namespace CodeBreaker.Level2
             if (Instance == this) Instance = null;
         }
 
+        bool resumed;
+        List<string> knownSolved = new List<string>();
+        float puzzleCheck;
+
         void Start()
         {
+            // Opened from the menu (Continue / Select Level) without the Game Session: nobody else records
+            // the level start, so the save points to this level from now on. (Opening the scene directly in
+            // the Editor does not touch the save.)
+            SaveData src = SaveSystem.PendingLoad;
+            if (GameFlowManager.Instance == null && src != null && src.sceneName == SceneName &&
+                LevelCatalog.Instance != null && LevelCatalog.Instance.Find(SceneName) != null)
+            {
+                SaveSystem.RecordLevelStart(SceneName,
+                    src != null ? src.health : 100f, src != null && src.maxHealth > 0f ? src.maxHealth : 100f,
+                    src != null ? src.wrongAttempts : 0, src != null ? src.totalPlayTime : 0f, resumed);
+            }
+            knownSolved = PuzzleBook.Solved(SceneName, Flag, GetInt);   // already solved when the level starts: no extra save
+
             // GameFlowManager has already used these during its scene-load step; clear them now.
             SaveSystem.ResumeCheckpoint = false;
             if (GameFlowManager.Instance == null && SaveSystem.PendingLoad != null && SaveSystem.PendingLoad.sceneName == SceneName)
@@ -138,6 +156,27 @@ namespace CodeBreaker.Level2
                 }
             controls = list.ToArray();
         }
+
+        // Saves as soon as a puzzle is newly solved (once per puzzle), with the full level state.
+        // Loading puts the player at the last checkpoint reached, with every solved puzzle still solved.
+        void LateUpdate()
+        {
+            if (Completed || ExternallyBlocked) return;
+            puzzleCheck -= Time.unscaledDeltaTime;
+            if (puzzleCheck > 0f) return;
+            puzzleCheck = 0.25f;
+            List<string> now = PuzzleBook.Solved(SceneName, Flag, GetInt);
+            bool newOne = false;
+            foreach (string id in now) if (!knownSolved.Contains(id)) { newOne = true; break; }
+            knownSolved = now;
+            if (!newOne || SceneLoader.IsLoading) return;
+            if (string.IsNullOrEmpty(checkpointLabel)) checkpointLabel = SceneName;
+            SaveCheckpoint();
+            PuzzleSaves++;
+        }
+
+        // Number of puzzle-solve saves this session (for the play tests).
+        public int PuzzleSaves { get; private set; }
 
         void Update()
         {
@@ -573,7 +612,7 @@ namespace CodeBreaker.Level2
         {
             Saving?.Invoke();
             SaveData prev = SaveSystem.Load();
-            SaveData d = prev ?? new SaveData { health = 100f, maxHealth = 100f };
+            SaveData d = prev ?? SaveSystem.NewData();
             d.sceneName = SceneName;
             LevelCatalog cat = LevelCatalog.Instance;
             LevelCatalog.LevelInfo info = cat != null ? cat.Find(SceneName) : null;
@@ -589,9 +628,8 @@ namespace CodeBreaker.Level2
                 d.wrongAttempts = gm.playerHealth.WrongAttempts;
             }
 
-            d.checkpointScene = SceneName;
-            d.checkpointLabel = checkpointLabel;
-            d.checkpointJson = JsonUtility.ToJson(BuildState());
+            SaveSystem.SetCheckpoint(d, SceneName, checkpointLabel, JsonUtility.ToJson(BuildState()));
+            SaveSystem.SetSolvedPuzzles(d, SceneName, PuzzleBook.Solved(SceneName, Flag, GetInt));
             SaveSystem.Save(d);
         }
 
@@ -615,12 +653,13 @@ namespace CodeBreaker.Level2
         {
             flags.RemoveWhere(IsNoteFlag);
             SaveData d = SaveSystem.Load();
-            if (d == null || !SaveSystem.HasCheckpoint(d, SceneName)) return;
+            LevelCheckpoint cp = SaveSystem.GetCheckpoint(d, SceneName);
+            if (cp == null) return;
             try
             {
-                L2State s = JsonUtility.FromJson<L2State>(d.checkpointJson);
+                L2State s = JsonUtility.FromJson<L2State>(cp.json);
                 if (s == null || s.flags.RemoveAll(IsNoteFlag) == 0) return;
-                d.checkpointJson = JsonUtility.ToJson(s);
+                SaveSystem.SetCheckpoint(d, SceneName, cp.label, JsonUtility.ToJson(s));
                 SaveSystem.Save(d);
             }
             catch (System.Exception e) { Debug.LogWarning("[" + SceneName + "] Could not clear the notes in the checkpoint: " + e.Message); }
@@ -636,6 +675,20 @@ namespace CodeBreaker.Level2
 
             GameFlowManager gm = GameFlowManager.Instance;
             if (gm != null && gm.levelTimer != null) gm.levelTimer.StopTimer();
+
+            // Mark the level completed and unlock the next one (only here, never when a level starts).
+            if (LevelCatalog.Instance != null && LevelCatalog.Instance.Find(SceneName) != null)
+            {
+                SaveData d = SaveSystem.Load() ?? SaveSystem.NewData();
+                if (gm != null && gm.playerHealth != null)
+                {
+                    d.health = gm.playerHealth.CurrentHealth;
+                    d.maxHealth = gm.playerHealth.maxHealth;
+                    d.wrongAttempts = gm.playerHealth.WrongAttempts;
+                }
+                SaveSystem.RecordLevelCompleted(d, SceneName);
+                SaveSystem.Save(d);
+            }
 
             ApplyControls();
             RefreshObjective(false);
@@ -700,11 +753,9 @@ namespace CodeBreaker.Level2
         public void ResetLevel()
         {
             SaveData d = SaveSystem.Load();
-            if (d != null && d.checkpointScene == SceneName)
+            if (SaveSystem.HasCheckpoint(d, SceneName))
             {
-                d.checkpointScene = null;
-                d.checkpointLabel = null;
-                d.checkpointJson = null;
+                SaveSystem.ClearCheckpoint(d, SceneName);
                 SaveSystem.Save(d);
             }
             SaveSystem.ResumeCheckpoint = false;

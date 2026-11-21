@@ -76,9 +76,24 @@ public class RoomManager : MonoBehaviour
 
     public bool IsBusy => busy;   // true while a door result / fade is playing
 
+    // Continuing a saved game: rooms already cleared (read before the session's level-start save).
+    Level1Progress resume;
+
     void Awake()
     {
         Instance = this;
+        PuzzleBook.Level1Rooms = rooms.Count;
+        SaveData pending = SaveSystem.PendingLoad;
+        string scene = gameObject.scene.name;
+        if ((pending != null && pending.sceneName == scene) || SaveSystem.ResumeCheckpoint)
+        {
+            LevelCheckpoint cp = SaveSystem.GetCheckpoint(SaveSystem.Load(), scene);
+            if (cp != null)
+            {
+                try { resume = JsonUtility.FromJson<Level1Progress>(cp.json); }
+                catch (System.Exception e) { Debug.LogWarning("[Level 1] Could not read the saved room progress: " + e.Message); }
+            }
+        }
         foreach (EscapeRoom room in rooms)
         {
             if (room.door1 != null) room.door1.DoorChosen += OnDoorChosen;
@@ -115,7 +130,41 @@ public class RoomManager : MonoBehaviour
 
         CurrentRoomIndex = 0;
         ActivateRoom(0);
+        if (resume != null && resume.roomsCleared > 0 && resume.roomsCleared < rooms.Count) ResumeAtRoom(resume.roomsCleared);
         UpdateLocationLabel();
+    }
+
+    // Load Saved Games: the cleared rooms stay cleared, the player starts in the first uncleared room
+    // (with a new question there) and the Level 1 clock continues from where it was.
+    void ResumeAtRoom(int cleared)
+    {
+        for (int i = 0; i < cleared; i++)
+        {
+            rooms[i].completed = true;
+            if (rooms[i].sign1 != null) rooms[i].sign1.Hide();
+            if (rooms[i].sign2 != null) rooms[i].sign2.Hide();
+        }
+        CurrentRoomIndex = cleared;
+        ActivateRoom(cleared);
+        RespawnAt(rooms[cleared].checkpoint);
+        StartCoroutine(AfterResume(resume.timeRemaining, rooms[cleared].roomName));
+    }
+
+    IEnumerator AfterResume(float timeRemaining, string roomName)
+    {
+        yield return null;   // after the session has started the level clock
+        GameFlowManager gm = GameFlowManager.Instance;
+        if (gm == null) yield break;
+        if (timeRemaining > 0f && gm.levelTimer != null) gm.levelTimer.SetRemainingTime(timeRemaining);
+        gm.ShowMessage("PROGRESS LOADED", "#E8C547", "Continuing from " + roomName + ".", null, 2.5f);
+    }
+
+    // A room's correct door was chosen: save how far the player got (Level 1 checkpoint).
+    void SaveRoomProgress(int clearedIndex)
+    {
+        GameFlowManager gm = GameFlowManager.Instance;
+        if (gm != null && clearedIndex + 1 < rooms.Count)
+            gm.SaveRoomProgress(gameObject.scene.name, clearedIndex + 1, rooms[clearedIndex + 1].roomName);
     }
 
     public QuizQuestion QuestionFor(int roomIndex) =>
@@ -274,6 +323,7 @@ public class RoomManager : MonoBehaviour
         CurrentRoomIndex = index + 1;
         ActivateRoom(CurrentRoomIndex);   // new random question + answer placement for the next room
         UpdateLocationLabel();
+        SaveRoomProgress(index);
     }
 
     IEnumerator BurnInTrapRoom(int index)
@@ -375,6 +425,7 @@ public class RoomManager : MonoBehaviour
         ActivateRoom(CurrentRoomIndex);        // new random question + door placement there
         RespawnAt(rooms[CurrentRoomIndex].checkpoint);
         UpdateLocationLabel();
+        SaveRoomProgress(index);
 
         yield return new WaitForSeconds(0.15f);
         if (gm != null) { yield return gm.FadeTo(0f, fadeTime); gm.SetControlsEnabled(true); }

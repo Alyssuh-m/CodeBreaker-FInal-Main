@@ -23,15 +23,16 @@ namespace CodeBreaker.Level3
             L2Game g = L2Game.Instance;
             if (screen == null || g == null) return;
             bool r = g.Flag("card_red_in"), b = g.Flag("card_blue_in"), c = g.Flag("card_green_in");
-            string m = r ? "9" : "?", s = b ? "4" : "?", cc = c ? "5" : "?";
+            L3PuzzleSet p = L3Puzzle.Current;
+            string m = r ? p.M.ToString() : "?", s = b ? p.S.ToString() : "?", cc = c ? p.C.ToString() : "?";
             if (L3Manager.Instance != null && L3Manager.Instance.Solved("term"))
             {
-                screen.text = "<color=#6EF08A>exitCode = 94\nACCESS GRANTED\nEXIT DOOR OPEN</color>";
+                screen.text = "<color=#6EF08A>exitCode = " + p.ExitCode + "\nACCESS GRANTED\nEXIT DOOR OPEN</color>";
                 return;
             }
             if (r && b && c)
             {
-                screen.text = "m = 9;  s = 4;  c = 5;\n\nif (m > s && c != 0)\n    exitCode = m * 10 + s;\nelse\n    exitCode = 0;\n// Enter exitCode";
+                screen.text = "m = " + p.M + ";  s = " + p.S + ";  c = " + p.C + ";\n\nif (m > s && c != 0)\n    exitCode = m * 10 + s;\nelse\n    exitCode = 0;\n// Enter exitCode";
                 return;
             }
             // Lockdown screen: which card comes from where, and what each card fills in.
@@ -41,9 +42,9 @@ namespace CodeBreaker.Level3
             screen.text =
                 "<color=" + (blink ? "#FF3B2F" : "#8A1E18") + "><b>SYSTEM LOCKDOWN</b></color>\n" +
                 "<size=58%><color=#7E97A6>KEYCARD STATUS  ·  INSERT ALL 3 TO UNLOCK THE EXIT</color></size>\n\n" +
-                Row("MAINTENANCE", "#FF5050", r, "m = 9") + "\n" +
-                Row("SECURITY", "#4F8BFF", b, "s = 4") + "\n" +
-                Row("CONTROL", "#5FD383", c, "c = 5") + "\n\n" +
+                Row("MAINTENANCE", "#FF5050", r, "m = " + p.M) + "\n" +
+                Row("SECURITY", "#4F8BFF", b, "s = " + p.S) + "\n" +
+                Row("CONTROL", "#5FD383", c, "c = " + p.C) + "\n\n" +
                 "<size=62%><color=#7E97A6>Card values:   m = " + m + ";   s = " + s + ";   c = " + cc + ";</color></size>";
         }
     

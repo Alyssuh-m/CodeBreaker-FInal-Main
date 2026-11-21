@@ -144,17 +144,21 @@ public class GameFlowManager : MonoBehaviour
     }
 
     // ---------------------------------------------------------------- level start: load / remember / auto-save
-    // Runs when a level starts (from OnSceneLoaded and Start; running twice is harmless).
+    // Runs when a level starts (from OnSceneLoaded and Start). Only the first call per loaded scene
+    // counts: a second call would no longer see the pending load and would start the level over.
+    Scene bookkeptScene;
+
     void BeginLevelBookkeeping(Scene scene)
     {
         if (IsGameOver || GameCompleted || shuttingDown) return;
+        if (bookkeptScene.IsValid() && scene == bookkeptScene) return;
+        bookkeptScene = scene;
         LevelCatalog cat = LevelCatalog.Instance;
 
         // Continuing a saved game: health, wrong attempts and play time come from the save.
         SaveData pending = SaveSystem.PendingLoad;
         // Resuming an in-level checkpoint (Load Saved Games or Level 2 Try Again): keep it in the new auto-save.
         bool resumingCheckpoint = (pending != null && pending.sceneName == scene.name) || SaveSystem.ResumeCheckpoint;
-        SaveData previous = resumingCheckpoint ? SaveSystem.Load() : null;
         if (pending != null && pending.sceneName == scene.name)
         {
             SaveSystem.PendingLoad = null;
@@ -169,30 +173,61 @@ public class GameFlowManager : MonoBehaviour
         }
         playTimeAtLevelStart = totalPlayTime;
 
-        // Auto-save: Load Saved Games continues from the start of this level.
-        // Only real levels from the Level Catalog are saved (not test scenes or the menu).
+        // Auto-save: the save now points to this level. Resuming keeps its checkpoint; a fresh start
+        // drops it. Completed levels, unlocked levels, solved puzzles and the other levels' checkpoints
+        // are kept. Only real levels from the Level Catalog are saved (not test scenes or the menu).
         LevelCatalog.LevelInfo info = cat != null ? cat.Find(scene.name) : null;
         if (info == null) return;
-        SaveData data = new SaveData
-        {
-            sceneName = scene.name,
-            levelName = info != null && !string.IsNullOrEmpty(info.label) ? ToTitle(info.label) : scene.name,
-            health = playerHealth != null ? playerHealth.CurrentHealth : 100f,
-            maxHealth = playerHealth != null ? playerHealth.maxHealth : 100f,
-            wrongAttempts = playerHealth != null ? playerHealth.WrongAttempts : 0,
-            totalPlayTime = totalPlayTime,
-        };
-        if (SaveSystem.HasCheckpoint(previous, scene.name))
-        {
-            data.checkpointScene = previous.checkpointScene;
-            data.checkpointLabel = previous.checkpointLabel;
-            data.checkpointJson = previous.checkpointJson;
-        }
-        SaveSystem.Save(data);
+        SaveSystem.RecordLevelStart(scene.name,
+            playerHealth != null ? playerHealth.CurrentHealth : 100f,
+            playerHealth != null ? playerHealth.maxHealth : 100f,
+            playerHealth != null ? playerHealth.WrongAttempts : 0,
+            totalPlayTime, resumingCheckpoint);
     }
 
-    static string ToTitle(string s) =>
-        System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s.ToLowerInvariant());
+    // Level 1: a room's correct door was chosen (not the last room). Saves the room progress so
+    // Load Saved Games continues from the next room.
+    public void SaveRoomProgress(string sceneName, int roomsCleared, string roomLabel)
+    {
+        if (IsGameOver || GameCompleted || shuttingDown) return;
+        LevelCatalog cat = LevelCatalog.Instance;
+        if (cat == null || cat.Find(sceneName) == null) return;
+        SaveData d = SaveSystem.Load() ?? SaveSystem.NewData();
+        d.sceneName = sceneName;
+        d.levelName = SaveSystem.LevelName(sceneName);
+        if (playerHealth != null)
+        {
+            d.health = playerHealth.CurrentHealth;
+            d.maxHealth = playerHealth.maxHealth;
+            d.wrongAttempts = playerHealth.WrongAttempts;
+        }
+        d.totalPlayTime = totalPlayTime;
+        var progress = new Level1Progress
+        {
+            roomsCleared = roomsCleared,
+            timeRemaining = levelTimer != null ? levelTimer.RemainingTime : -1f,
+        };
+        SaveSystem.SetCheckpoint(d, sceneName, roomLabel, JsonUtility.ToJson(progress));
+        SaveSystem.SetSolvedPuzzles(d, sceneName, PuzzleBook.SolvedFromCheckpoint(sceneName, d.checkpointJson));
+        SaveSystem.Save(d);
+    }
+
+    // The level was finished: mark it completed and unlock the next level (never on starting a level).
+    void SaveLevelCompleted(string sceneName)
+    {
+        LevelCatalog cat = LevelCatalog.Instance;
+        if (cat == null || cat.Find(sceneName) == null) return;
+        SaveData d = SaveSystem.Load() ?? SaveSystem.NewData();
+        if (playerHealth != null)
+        {
+            d.health = playerHealth.CurrentHealth;
+            d.maxHealth = playerHealth.maxHealth;
+            d.wrongAttempts = playerHealth.WrongAttempts;
+        }
+        d.totalPlayTime = totalPlayTime;
+        SaveSystem.RecordLevelCompleted(d, sceneName);
+        SaveSystem.Save(d);
+    }
 
     void Update()
     {
@@ -242,6 +277,7 @@ public class GameFlowManager : MonoBehaviour
         StopTimer();
 
         Scene scene = SceneManager.GetActiveScene();
+        SaveLevelCompleted(scene.name);
 
         if (levelCompleteMenu != null)
         {

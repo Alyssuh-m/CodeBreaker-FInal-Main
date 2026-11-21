@@ -74,7 +74,8 @@ namespace CodeBreaker.Level3
             int count = Count(g);
             // already reached (loaded game): restore lasting state silently, never replay
             for (int k = 1; k <= count; k++) { g.SetFlag("l3evt_" + k); EventsReached = k; }
-            if (count >= 2) SetEmergency(true, true);
+            bool escaped = L3Manager.Instance != null && L3Manager.Instance.Solved("term");   // Phase 9: lockdown already lifted
+            if (count >= 2 && !escaped) SetEmergency(true, true);
             if (count >= 3) SetFeedsStatic(true);
             started = true;
         }
