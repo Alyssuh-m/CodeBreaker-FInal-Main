@@ -1,16 +1,8 @@
 fileFormatVersion: 2
-guid: 2a2726fcb98a4ea4ba96e5b2b1e165d8
-timeCreated: 1580700573
-licenseType: Store
+guid: 38d3e3de14b24e14295f86b5aa9f5f34
 NativeFormatImporter:
-  mainObjectFileID: 11400000
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonKnights/Models/ConvexCollisions/SM_Bld_Castle_Tower_Top_01_Snow_Convex.asset
-  uploadId: 645704

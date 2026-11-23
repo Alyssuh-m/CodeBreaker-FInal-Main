@@ -1,17 +1,8 @@
 fileFormatVersion: 2
-guid: 60299f77cca5b8d478c89bf945c37a38
-timeCreated: 1580700833
-licenseType: Store
+guid: 71f49acae62d00349b4d2795731042f8
 NativeFormatImporter:
-  mainObjectFileID: 11400000
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonKnights/Models/ConvexCollisions/SM_Bld_House_TopRoomSmall_02_Convex
-    1.asset
-  uploadId: 645704

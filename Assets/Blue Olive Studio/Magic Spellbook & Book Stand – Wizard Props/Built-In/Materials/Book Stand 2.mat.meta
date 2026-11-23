@@ -1,16 +1,8 @@
 fileFormatVersion: 2
-guid: 2b4b21322911af44f9b90725ef81675f
+guid: a02b4f91b5d4cae4e8a6352a46308e2e
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 2100000
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 392142
-  packageName: "Magic Spellbook & Book Stand \u2013 Wizard Props"
-  packageVersion: 1.0
-  assetPath: "Assets/Blue Olive Studio/Magic Spellbook & Book Stand \u2013 Wizard
-    Props/Built-In/Materials/Book Stand 2.mat"
-  uploadId: 964136

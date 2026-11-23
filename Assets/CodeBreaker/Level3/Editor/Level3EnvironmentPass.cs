@@ -410,6 +410,8 @@ namespace CodeBreaker.Level3.EditorTools
             log.AppendLine("Floor lines: red -> Maintenance (west door), green -> Control (north door), blue -> Security (east door); start behind the central terminal");
         }
 
+        const bool PaintedWingNames = false;
+
         static void Lane(Transform parent, string name, Color col, float y, Vector3[] pts, string label, Vector3 labelPos, Vector3 labelDir)
         {
             Transform l = Group(name, parent, Vector3.zero);
@@ -431,7 +433,8 @@ namespace CodeBreaker.Level3.EditorTools
                     cv.transform.rotation = Quaternion.LookRotation(d, Vector3.up);
                 }
             }
-            // painted wing name beside the line, readable while walking toward the wing
+            // painted wing names on the floor were removed (the coloured lines and door signs guide the player)
+            if (!PaintedWingNames) return;
             var go = new GameObject("Label_" + label);
             go.transform.SetParent(l, false);
             go.transform.position = labelPos + Vector3.up * (y + 0.01f);

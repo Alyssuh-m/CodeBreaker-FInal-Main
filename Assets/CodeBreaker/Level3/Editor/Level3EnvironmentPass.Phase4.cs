@@ -264,7 +264,9 @@ namespace CodeBreaker.Level3.EditorTools
             Transform n = Group("WarningNotes", g, Vector3.zero);
             Note(n, "Note_DoNotReboot", new Vector3(-13.53f, 4.6f, 8f), Vector3.right, "<s>DO NOT REBOOT</s>\n<size=70%>ok now - R.</size>", 6f);
             Note(n, "Note_DoNotTouch", new Vector3(-13.53f, 4.2f, -3f), Vector3.right, "SYSTEM FAILURE\n<b>DO NOT TOUCH</b>", -4f);
-            Note(n, "Note_PowerOff", new Vector3(-59.31f, 4.3f, -9.2f), Vector3.left, "<s>POWER MUST\nREMAIN OFF</s>", 3f);
+            // on the cabinet's right door, below the handle and clear of the door seam and the down-pipe
+            Note(n, "Note_PowerOff", new Vector3(-59.285f, 4.3f, -8.6f), Vector3.left, "POWER MUST\nREMAIN OFF", 3f);
+            { Transform npo = n.Find("Note_PowerOff"); if (npo != null) npo.localScale = Vector3.one * 0.85f; }
             Note(n, "Note_Authorised", new Vector3(46f, 6.4f, 0.93f), Vector3.forward, "AUTHORIZED\nPERSONNEL ONLY", -5f);
             log.AppendLine("Warning notes: 4 taped notes (DO NOT REBOOT crossed out, SYSTEM FAILURE - DO NOT TOUCH, POWER MUST REMAIN OFF crossed out, AUTHORIZED PERSONNEL ONLY)");
         }

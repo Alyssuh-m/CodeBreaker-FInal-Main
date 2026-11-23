@@ -109,6 +109,57 @@ namespace CodeBreaker.Level2
             }
             GameObject p = GameObject.FindWithTag("Player");
             if (p != null) playerCC = p.GetComponent<CharacterController>();
+            if (solid != null && kind == Kind.Drawer) AddHeadClearance();
+        }
+
+        // ---- head-height drawers (e.g. the top drawer of the study filing cabinet in Level 2)
+        // The player's CharacterController ends well below the camera, so a drawer that opens above the
+        // capsule but at eye level was never touched by it: the player walked "through" it with the
+        // camera inside or over the drawer. For such a drawer an invisible box fills the space between the
+        // drawer and the top of the player's body and moves with the drawer while it is open, so the
+        // player stops at the drawer front like with the lower drawers. It is not part of the drawer
+        // (so aiming below the open drawer still reaches the drawer under it) and is off while closed.
+        BoxCollider headBlock;
+        Vector3 headBlockClosed;
+
+        void AddHeadClearance()
+        {
+            if (playerCC == null) return;
+            Physics.SyncTransforms();
+            Bounds db = solid.bounds;
+            Transform pt = playerCC.transform;
+            float capH = playerCC.height * Mathf.Abs(pt.lossyScale.y);
+            float feet = playerCC.bounds.min.y;
+            Camera cam = playerCC.GetComponentInChildren<Camera>();
+            float eye = cam != null ? cam.transform.position.y - feet : capH;
+            if (eye <= capH + 0.05f) return;                       // the body already reaches eye level
+
+            // floor in front of the open drawer
+            Vector3 probe = db.center + slide * Mathf.Clamp01(maxOpen);
+            probe.y = db.min.y - 0.01f;
+            float floor = float.NegativeInfinity;
+            foreach (RaycastHit h in Physics.RaycastAll(probe, Vector3.down, 30f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider.GetComponentInParent<L2Openable>() != null || h.collider.transform.IsChildOf(pt)) continue;
+                if (h.point.y > floor) floor = h.point.y;
+            }
+            if (float.IsNegativeInfinity(floor)) return;
+            float bottom = db.min.y - floor;
+            if (bottom < capH - 0.05f || bottom > eye + 0.25f) return;  // the body hits it already / it is above the head
+
+            float y0 = floor + capH * 0.5f, y1 = db.min.y + 0.02f;
+            var go = new GameObject(name + "_HeadClearance");
+            Transform parent = transform.parent;
+            if (parent != null && parent.GetComponentInParent<L2Interactable>() != null) parent = null;
+            go.transform.SetParent(parent, true);
+            go.transform.SetPositionAndRotation(new Vector3(db.center.x, (y0 + y1) * 0.5f, db.center.z), Quaternion.identity);
+            // SetParent(.., true) kept the world scale at 1, so the box size below is in world units
+            go.layer = gameObject.layer;
+            headBlock = go.AddComponent<BoxCollider>();
+            headBlock.size = new Vector3(db.size.x, y1 - y0, db.size.z);
+            headBlock.enabled = false;
+            headBlockClosed = go.transform.position;
+            solidList.Add(headBlock);
         }
 
         // Bounds (in this object's local space) of the visible door / drawer parts that are children of
@@ -139,7 +190,11 @@ namespace CodeBreaker.Level2
         // Every part with a solid box, so a swinging door stops against another open door / drawer
         // instead of passing through it.
         static readonly System.Collections.Generic.List<L2Openable> all = new System.Collections.Generic.List<L2Openable>();
-        void OnDestroy() => all.Remove(this);
+        void OnDestroy()
+        {
+            all.Remove(this);
+            if (headBlock != null) Destroy(headBlock.gameObject);
+        }
 
         // Overlap of this part with every other part it touches right now.
         readonly System.Collections.Generic.Dictionary<L2Openable, float> overlapNow = new System.Collections.Generic.Dictionary<L2Openable, float>();
@@ -261,6 +316,15 @@ namespace CodeBreaker.Level2
             for (int i = 0; i < attPos.Length; i++)
                 if (attached[i] != null)
                     attached[i].SetPositionAndRotation(pos + rot * attPos[i], rot * attRot[i]);
+
+            if (headBlock != null)
+            {
+                headBlock.transform.position = headBlockClosed + slide * k;
+                headBlock.enabled = k > 0.001f;
+            }
         }
+
+        // For tests: the invisible head-height blocker of this drawer (null if it doesn't need one).
+        public Collider HeadClearance => headBlock;
     }
 }

@@ -1,16 +1,8 @@
 fileFormatVersion: 2
-guid: 0899f3f1fdf546547af4603cb59df879
-timeCreated: 1580700538
-licenseType: Store
+guid: 9a1e7a346c2a7d04c94dba6e4166f8e7
 NativeFormatImporter:
-  mainObjectFileID: 11400000
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonKnights/Models/ConvexCollisions/SM_Bld_House_StepsSmall_01_Snow_Convex.asset
-  uploadId: 645704

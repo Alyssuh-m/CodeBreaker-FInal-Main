@@ -135,9 +135,10 @@ namespace CodeBreaker.Level3.EditorTools
 
             // ---- pipes along the south wall, with brackets, a dripping joint and a steam leak
             const float pz = -10.3f;
-            Cylinder("Pipe_Main", m, new Vector3(-59.25f, 9.6f, pz), new Vector3(-23.6f, 9.6f, pz), 0.28f, rust);
+            // both wall pipes run the whole wall: into the west corner and up to the east wall face (x -22.95)
+            Cylinder("Pipe_Main", m, new Vector3(-59.25f, 9.6f, pz), new Vector3(-22.7f, 9.6f, pz), 0.28f, rust);
             Cylinder("Pipe_Down", m, new Vector3(-59.25f, 9.6f, pz), new Vector3(-59.25f, 0f, pz), 0.28f, rust);
-            Cylinder("Pipe_Fire", m, new Vector3(-58f, 8.95f, -10.5f), new Vector3(-23.6f, 8.95f, -10.5f), 0.17f, red);
+            Cylinder("Pipe_Fire", m, new Vector3(-59.75f, 8.95f, -10.5f), new Vector3(-22.7f, 8.95f, -10.5f), 0.17f, red);
             for (float x = -57f; x > -24f; x -= 4.2f)
             {
                 Box("PipeBracket", m, new Vector3(x, 9.3f, -10.62f), new Vector3(0.15f, 0.9f, 0.35f), dark);
@@ -181,7 +182,8 @@ namespace CodeBreaker.Level3.EditorTools
             Box("Cabinet", ep, new Vector3(0f, 0f, 0.15f), new Vector3(2.4f, 3.6f, 0.35f), Lit("M_L3_PanelGrey", new Color(0.36f, 0.38f, 0.4f), 0.35f, 0.6f));
             Box("DoorSeam", ep, new Vector3(0f, 0f, -0.04f), new Vector3(0.03f, 3.4f, 0.02f), dark);
             Box("Handle", ep, new Vector3(0.35f, 0f, -0.07f), new Vector3(0.08f, 0.5f, 0.08f), metal);
-            TextPlate(ep, "Danger", "<b>DANGER</b>\n415 V", new Vector3(-0.6f, 1.2f, -0.05f), 0.9f, 0.6f, Color.black, 1.5f, false, yellow);
+            TextPlate(ep, "Danger", "<b>DANGER</b>\n415 V", new Vector3(-0.43f, 1.2f, -0.06f), 0.9f, 0.6f, Color.black, 1.5f, false, yellow);
+            ep.Find("Danger").localScale = Vector3.one * 0.65f;   // fits the left door between the down-pipe and the seam
             Transform ts = Group("TempWarningSign", m, new Vector3(-43f, 7.2f, -10.78f));
             ts.rotation = Quaternion.LookRotation(Vector3.back, Vector3.up);
             TextPlate(ts, "Sign", "<b>WARNING</b>\nHIGH TEMPERATURE\n<size=70%>DO NOT TOUCH PIPES</size>", Vector3.zero, 3f, 1.6f, Color.black, 3f, false, yellow);
@@ -193,12 +195,20 @@ namespace CodeBreaker.Level3.EditorTools
             Transform blades = new GameObject("Blades").transform; blades.SetParent(fan, false); blades.localPosition = new Vector3(0f, 0f, -0.7f);
             for (int i = 0; i < 3; i++)
             {
-                GameObject bl = Box("Blade", blades, Vector3.zero, new Vector3(0.45f, i == 1 ? 0.95f : 1.35f, 0.04f), metal);
-                bl.transform.localRotation = Quaternion.Euler(18f, 0f, i * 120f);
-                bl.transform.localPosition = bl.transform.localRotation * new Vector3(0f, (i == 1 ? 0.48f : 0.68f), 0f);
+                GameObject bl = Box("Blade", blades, Vector3.zero, new Vector3(0.42f, 1.2f, 0.04f), metal);   // three equal blades
+                Quaternion around = Quaternion.Euler(0f, 0f, i * 120f);
+                bl.transform.localRotation = around * Quaternion.Euler(0f, 22f, 0f);   // pitch around the blade's own length
+                bl.transform.localPosition = around * new Vector3(0f, 0.68f, 0f);
             }
-            GameObject guard = MeshObj("Guard", fan, QuadXY(3.1f, 3.1f, 0.5f, 10f, 10f), cage);
-            guard.transform.localPosition = new Vector3(0f, 0f, -0.9f);
+            // no wire cage over the fan (cleaner look); a small hub covers the blade roots instead
+            GameObject hub = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            hub.name = "Hub";
+            Object.DestroyImmediate(hub.GetComponent<Collider>());
+            hub.transform.SetParent(fan, false);
+            hub.transform.localPosition = blades.localPosition + new Vector3(0f, 0f, -0.06f);
+            hub.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            hub.transform.localScale = new Vector3(0.36f, 0.07f, 0.36f);
+            hub.GetComponent<MeshRenderer>().sharedMaterial = dark;   // same material as the housing
             fan.gameObject.AddComponent<L3BrokenFan>().blades = blades;
 
             // ---- maintenance paperwork pinned beside the pegboard (decoration; Phase 7 adds readable story items)
@@ -264,7 +274,8 @@ namespace CodeBreaker.Level3.EditorTools
             Light scrGlow = PointLight(o, "StaticGlow", o.TransformPoint(new Vector3(0f, 4f, 1.6f)), new Color(0.5f, 0.7f, 1f), 3.5f, 6f);
             var colours = new[] { new Color(0.1f, 0.2f, 0.5f), new Color(0.5f, 0.1f, 0.08f), new Color(0.12f, 0.12f, 0.12f) };
             for (int i = 0; i < 3; i++)
-                Box("Binder_" + i, o, new Vector3(-2.6f + i * 0.28f, 3.4f, -0.8f), new Vector3(0.25f, 0.95f, 0.75f), Lit("M_L3_Binder_" + i, colours[i], 0.35f));
+                // beside the left monitor (CRT_0 spans x -2.3..-0.5), not inside it
+                Box("Binder_" + i, o, new Vector3(-2.88f + i * 0.225f, 3.4f, -0.8f), new Vector3(0.21f, 0.95f, 0.75f), Lit("M_L3_Binder_" + i, colours[i], 0.35f));
             for (int i = 0; i < 4; i++)
             {
                 GameObject pp = MeshObj("Paper", o, QuadXZ(0.6f, 0.8f, 1f, 1f), paper);

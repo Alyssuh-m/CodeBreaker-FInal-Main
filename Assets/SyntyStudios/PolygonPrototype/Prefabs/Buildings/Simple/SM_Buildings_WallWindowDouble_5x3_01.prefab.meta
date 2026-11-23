@@ -1,16 +1,7 @@
 fileFormatVersion: 2
-guid: 54634004fe05e614b9925b8618f478d7
-timeCreated: 1547426664
-licenseType: Store
-NativeFormatImporter:
-  mainObjectFileID: 100100000
+guid: 160a831aa5641b3489e5b5e47aa0035d
+PrefabImporter:
+  externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonPrototype/Prefabs/Buildings/Simple/SM_Buildings_WallWindowDouble_5x3_01.prefab
-  uploadId: 645704

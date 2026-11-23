@@ -1,16 +1,8 @@
 fileFormatVersion: 2
-guid: 2ac2a01e7633f314eaa0210220a16e1f
-timeCreated: 1580700974
-licenseType: Store
+guid: 9af0ec1a065f67442869ad1ef1b7dcbf
 NativeFormatImporter:
-  mainObjectFileID: 11400000
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonKnights/Models/ConvexCollisions/SM_Env_Path_Tile_Corner_01_Snow_Convex.asset
-  uploadId: 645704

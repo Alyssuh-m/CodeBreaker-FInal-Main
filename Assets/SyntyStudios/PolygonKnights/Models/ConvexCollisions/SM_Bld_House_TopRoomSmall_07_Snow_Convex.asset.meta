@@ -1,16 +1,8 @@
 fileFormatVersion: 2
-guid: ccc40a01087c530409e3c124a88619a4
-timeCreated: 1580700582
-licenseType: Store
+guid: 1e76e85672704a1478fe0213fe995670
 NativeFormatImporter:
-  mainObjectFileID: 11400000
+  externalObjects: {}
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 207048
-  packageName: POLYGON - Sampler Pack
-  packageVersion: 1.1.0
-  assetPath: Assets/SyntyStudios/PolygonKnights/Models/ConvexCollisions/SM_Bld_House_TopRoomSmall_07_Snow_Convex.asset
-  uploadId: 645704
