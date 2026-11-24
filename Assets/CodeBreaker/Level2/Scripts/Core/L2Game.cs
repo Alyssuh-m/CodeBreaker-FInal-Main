@@ -241,6 +241,7 @@ namespace CodeBreaker.Level2
             if (string.IsNullOrEmpty(f)) return;
             bool changed = on ? flags.Add(f) : flags.Remove(f);
             if (changed) RaiseChanged();
+            if (changed && on) CodeBreaker.Database.DatabaseHooks.Level2Flag(SceneName, f);   // SQLite: Level 2 puzzle solved
         }
 
         public int GetInt(string key, int fallback) => ints.TryGetValue(key, out int v) ? v : fallback;
@@ -270,6 +271,7 @@ namespace CodeBreaker.Level2
             if (!string.IsNullOrEmpty(p.flagOnCollect)) flags.Add(p.flagOnCollect);
             p.gameObject.SetActive(false);
             AddItem(p.itemId, true);
+            CodeBreaker.Database.DatabaseHooks.ItemCollected(p.itemId);   // SQLite: clue / key / item / keycard
 
             L2ItemDef def = L2Items.Get(p.itemId);
             if (def != null && !string.IsNullOrEmpty(def.back))
@@ -532,6 +534,7 @@ namespace CodeBreaker.Level2
             if (Flag("photo_assembled")) return;
             foreach (string id in L2Items.PhotoPieces) inventory.Remove(id);
             flags.Add("photo_assembled");
+            CodeBreaker.Database.DatabaseHooks.Level2Flag(SceneName, "photo_assembled");   // SQLite: photo puzzle solved
             AddItem(L2Items.FamilyPhoto, false);
             if (sfx != null) sfx.Success();
             Notify("Family Photo restored.", L2NoteKind.Success);
@@ -689,6 +692,10 @@ namespace CodeBreaker.Level2
                 SaveSystem.RecordLevelCompleted(d, SceneName);
                 SaveSystem.Save(d);
             }
+            // SQLite: Level 3 completion (Level 2 is saved by SqliteScoreStore, so the hook skips it)
+            CodeBreaker.Database.DatabaseHooks.LevelCompleted(SceneName,
+                CodeBreaker.Level3.L3Manager.Instance != null ? CodeBreaker.Level3.L3Manager.Instance.Remaining
+                : gm != null && gm.levelTimer != null ? gm.levelTimer.RemainingTime : 0f);
 
             ApplyControls();
             RefreshObjective(false);

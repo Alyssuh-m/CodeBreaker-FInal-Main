@@ -113,6 +113,7 @@ namespace CodeBreaker.Level3
             message = "";
             if (Solved) { message = successDisplay; return true; }
             if (M == null) return false;
+            CodeBreaker.Database.DatabaseHooks.Level3Input(station, (input ?? "").Trim());   // SQLite: remember what was typed
 
             if (!PreCheck(out string pre, out bool penalize))
             {

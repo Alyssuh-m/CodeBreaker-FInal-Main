@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-// Code Breaker: one auto-save slot.
+// Code Breaker: one auto-save slot, stored in the SQLite database (SqliteSaveStore).
 // The game saves automatically every time a level starts (scene, HP, wrong attempts, play time),
 // every time a puzzle is solved, and at each checkpoint. "Load Saved Games" continues from there.
 // The same slot also keeps the player's overall progress: completed levels, unlocked levels,
@@ -276,9 +276,37 @@ public static class SaveSystem
         d.progressVersion = ProgressVersion;
     }
 
-    // ------------------------------------------------------------------ file
+    // ------------------------------------------------------------------ storage
+    // The save lives in the SQLite database (codebreaker_game.db, see CodeBreaker/Database).
+    // Only if SQLite cannot start (e.g. sqlite3.dll missing) does it fall back to the old JSON file.
     // Returns null when there is no save, or when it is unreadable / points to a scene that no longer exists.
     public static SaveData Load()
+    {
+        if (CodeBreaker.Database.SqliteSaveStore.Active)
+        {
+            try
+            {
+                CodeBreaker.Database.SqliteSaveStore.ImportJsonOnce(LoadJson);   // an old JSON save is copied in once
+                SaveData d = CodeBreaker.Database.SqliteSaveStore.Load();
+                if (d == null || string.IsNullOrEmpty(d.sceneName)) return null;
+                if (!Application.CanStreamedLevelBeLoaded(d.sceneName))
+                {
+                    Debug.LogWarning("[Code Breaker] Save points to scene '" + d.sceneName + "', which is not in the build.");
+                    return null;
+                }
+                return d;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Code Breaker] Could not read the save from the database: " + e.Message);
+                return null;
+            }
+        }
+        return LoadJson();
+    }
+
+    // The old JSON save file (fallback, and the one-time import into SQLite).
+    static SaveData LoadJson()
     {
         try
         {
@@ -303,6 +331,17 @@ public static class SaveSystem
     public static void Save(SaveData data)
     {
         if (data == null || string.IsNullOrEmpty(data.sceneName)) return;
+        if (CodeBreaker.Database.SqliteSaveStore.Active)
+        {
+            try
+            {
+                if (data.progressVersion < ProgressVersion) Upgrade(data);
+                data.savedAt = DateTime.Now.ToString("o");
+                CodeBreaker.Database.SqliteSaveStore.Save(data);
+            }
+            catch (Exception e) { Debug.LogWarning("[Code Breaker] Could not write the save to the database: " + e.Message); }
+            return;
+        }
         try
         {
             if (data.progressVersion < ProgressVersion) Upgrade(data);
@@ -320,6 +359,12 @@ public static class SaveSystem
 
     public static void Delete()
     {
+        if (CodeBreaker.Database.SqliteSaveStore.Active)
+        {
+            try { CodeBreaker.Database.SqliteSaveStore.Delete(); }
+            catch (Exception e) { Debug.LogWarning("[Code Breaker] Could not delete the save from the database: " + e.Message); }
+            return;
+        }
         try { if (File.Exists(FilePath)) File.Delete(FilePath); }
         catch (Exception e) { Debug.LogWarning("[Code Breaker] Could not delete the save file: " + e.Message); }
     }

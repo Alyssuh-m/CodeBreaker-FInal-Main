@@ -563,6 +563,7 @@ namespace CodeBreaker.Level2
             yield return new WaitForSecondsRealtime(0.25f);
             bool ok = true;
             for (int i = 0; i < 4; i++) if (lockInput[i] != L2MoonBox.Code[i]) ok = false;
+            CodeBreaker.Database.DatabaseHooks.Level2Answer("bedroom_moonbox", string.Join(", ", lockInput), ok);   // SQLite: moon box attempt
             lockFlash = 0.6f;
             lockFlashColor = ok ? Good : Bad;
             if (ok)

@@ -173,6 +173,7 @@ public class MainMenuController : MonoBehaviour
         {
             busy = true;
             SaveSystem.Delete();   // confirmed: the old progress is replaced by this new game
+            CodeBreaker.Database.DatabaseHooks.NewGame();   // SQLite: the old save slot is replaced too
             StartCoroutine(FadeMusicOut());
         }
     }

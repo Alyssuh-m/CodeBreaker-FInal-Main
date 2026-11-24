@@ -215,6 +215,8 @@ public class RoomManager : MonoBehaviour
         AnswerSign sign = room.Sign(chosen);
         QuizQuestion q = QuestionFor(index);
         bool correct = sign != null && q != null && sign.HasAnswer && sign.CurrentLetter == q.correctAnswer;
+        CodeBreaker.Database.DatabaseHooks.Level1DoorChosen(pool.CurrentFor(index), sign != null && sign.HasAnswer ? sign.CurrentLetter.ToString() : "?", correct,
+            correct && index + 1 < rooms.Count ? rooms[index + 1].roomName : room.roomName);   // SQLite: save the attempt
 
         StartCoroutine(correct ? CorrectChoice(index, door) : WrongChoice(index, door));
     }
@@ -245,6 +247,8 @@ public class RoomManager : MonoBehaviour
         AnswerSign sign = room.Sign(chosen);
         QuizQuestion q = QuestionFor(index);
         bool correct = sign != null && q != null && sign.HasAnswer && sign.CurrentLetter == q.correctAnswer;
+        CodeBreaker.Database.DatabaseHooks.Level1DoorChosen(pool.CurrentFor(index), sign != null && sign.HasAnswer ? sign.CurrentLetter.ToString() : "?", correct,
+            correct && index + 1 < rooms.Count ? rooms[index + 1].roomName : room.roomName);   // SQLite: save the attempt
 
         DoorThreshold destination = correct ? room.RealWay : room.TrapWay;
         if (destination != crossed) SwapToDoor(crossed, destination);

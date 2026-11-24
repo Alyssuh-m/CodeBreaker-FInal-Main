@@ -57,6 +57,8 @@ namespace CodeBreaker.Level2
             int stage = Stage;
             if (stage >= 2) { message = "OK"; return true; }
             string want = checkAnswers[Mathf.Clamp(stage, 0, checkAnswers.Length - 1)];
+            CodeBreaker.Database.DatabaseHooks.Level2Answer("study_checks", (stage == 0 ? "channel = " : "stars = ") + (input ?? "").Trim(),
+                (input ?? "").Trim().TrimStart('0') == want);   // SQLite: computer check attempt
             if ((input ?? "").Trim().TrimStart('0') == want)
             {
                 Game.SetInt("terminal_checks", stage + 1);
@@ -88,7 +90,9 @@ namespace CodeBreaker.Level2
         {
             if (entered == null) return false;
             string a = Squash(entered), b = Squash(password);
-            return a.Length > 0 && string.Equals(a, b, System.StringComparison.OrdinalIgnoreCase);
+            bool ok = a.Length > 0 && string.Equals(a, b, System.StringComparison.OrdinalIgnoreCase);
+            CodeBreaker.Database.DatabaseHooks.Level2Answer("study_login", entered, ok);   // SQLite: password attempt
+            return ok;
         }
 
         static string Squash(string s)

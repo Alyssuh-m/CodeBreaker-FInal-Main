@@ -45,6 +45,7 @@ namespace CodeBreaker.Level2
         string Pick(int index)
         {
             L2Game g = Game;
+            CodeBreaker.Database.DatabaseHooks.Level2Answer("kitchen_recipe", index >= 0 && index < options.Length ? options[index] : "?", index == correct);   // SQLite
             if (index == correct)
             {
                 if (g != null)

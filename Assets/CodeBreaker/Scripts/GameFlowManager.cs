@@ -183,6 +183,7 @@ public class GameFlowManager : MonoBehaviour
             playerHealth != null ? playerHealth.maxHealth : 100f,
             playerHealth != null ? playerHealth.WrongAttempts : 0,
             totalPlayTime, resumingCheckpoint);
+        CodeBreaker.Database.DatabaseHooks.LevelStarted(scene.name, playerHealth != null ? playerHealth.CurrentHealth : 100f);   // SQLite auto-save
     }
 
     // Level 1: a room's correct door was chosen (not the last room). Saves the room progress so
@@ -257,6 +258,7 @@ public class GameFlowManager : MonoBehaviour
         if (IsGameOver || GameCompleted) return;
 
         IsGameOver = true;
+        CodeBreaker.Database.DatabaseHooks.GameOver(reason);   // SQLite: save is GAME_OVER
         StopTimer();
         CloseSettings();
         if (AudioManager.Instance != null) AudioManager.Instance.StopGameplayAudio();
@@ -278,6 +280,7 @@ public class GameFlowManager : MonoBehaviour
 
         Scene scene = SceneManager.GetActiveScene();
         SaveLevelCompleted(scene.name);
+        CodeBreaker.Database.DatabaseHooks.LevelCompleted(scene.name, levelTimer != null ? levelTimer.RemainingTime : 0f);   // SQLite (Level 1)
 
         if (levelCompleteMenu != null)
         {
@@ -438,6 +441,7 @@ public class GameFlowManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
         Instance = null;
         SaveSystem.PendingLoad = null;
+        CodeBreaker.Database.DatabaseHooks.NewGame();   // SQLite: new save slot
         Destroy(gameObject);
         if (!SceneLoader.Instance.LoadLevel(firstLevelScene))   // Level 1 loading screen
             SceneManager.LoadScene(firstLevelScene);

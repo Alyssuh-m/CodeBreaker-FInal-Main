@@ -45,6 +45,7 @@ namespace CodeBreaker.Level2
         // Called by the keypad interface.
         public bool Submit(string entered)
         {
+            CodeBreaker.Database.DatabaseHooks.Level2Answer("kitchen_oven", entered, entered == code);   // SQLite: oven code attempt
             if (entered != code)
             {
                 if (Game != null && Game.sfx != null) Game.sfx.Failure();

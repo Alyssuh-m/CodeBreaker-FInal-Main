@@ -293,6 +293,7 @@ namespace CodeBreaker.Level3
             if (g == null || Solved(station)) return;
             g.SetFlag("solved_" + station);
             g.RefreshObjective();
+            CodeBreaker.Database.DatabaseHooks.Level3Result(station, true);   // SQLite: challenge completed
         }
 
         public int WrongCount(string station) => G != null ? G.GetInt("wrong_" + station, 0) : 0;
@@ -302,6 +303,7 @@ namespace CodeBreaker.Level3
             if (G == null) return 0;
             int n = WrongCount(station) + 1;
             G.SetInt("wrong_" + station, n);
+            CodeBreaker.Database.DatabaseHooks.Level3Result(station, false);   // SQLite: wrong attempt
             return n;
         }
 
