@@ -7,27 +7,10 @@ using UnityEngine;
 
 namespace CodeBreaker.Database.EditorTools
 {
-    // ---------------------------------------------------------------------------------------------
-    // Database Viewer: shows what is inside codebreaker_game.db, right in the Unity Editor.
-    //
-    //   Menu:  Code Breaker > Database Viewer
-    //
-    //  - QUICK VIEWS: the save slot, puzzle attempts, collected items, keycards, completed levels
-    //    and checkpoints, joined with level and puzzle names so they are easy to read.
-    //  - TABLES: every table with its number of rows. Click one to see all its rows.
-    //  - Click a row to see its full values at the bottom (long questions, hints ...).
-    //  - SQL box: type your own SELECT query and press Run (only SELECT / PRAGMA are allowed,
-    //    so the viewer can never change or delete data).
-    //  - Auto refresh: while the game is playing, the view updates every second, so you can
-    //    watch answers and items appear as you play.
-    //
-    // It only reads the database. The game writes it (DatabaseManager / GameDatabase).
-    // ---------------------------------------------------------------------------------------------
     public class DatabaseViewerWindow : EditorWindow
     {
         const int MaxRows = 500;
 
-        // ----------------------------------------------------------------- quick views
         static readonly string[] QuickNames =
         {
             "Save slot",
@@ -89,7 +72,6 @@ namespace CodeBreaker.Database.EditorTools
               ORDER BY l.level_number, ci.item_type, ci.sort_order",
         };
 
-        // ----------------------------------------------------------------- state
         string dbPath;
         string viewTitle = "";
         string currentSql = "";
@@ -121,10 +103,9 @@ namespace CodeBreaker.Database.EditorTools
             dbPath = Path.Combine(Application.persistentDataPath, "codebreaker_game.db");
             viewTitle = QuickNames[0];
             currentSql = QuickSql[0];
-            needsReload = true;   // loaded in the first OnGUI (Unity's editor styles are ready there)
+            needsReload = true;
         }
 
-        // Live view while playing.
         void Update()
         {
             if (!autoRefresh || !EditorApplication.isPlaying) return;
@@ -134,7 +115,6 @@ namespace CodeBreaker.Database.EditorTools
             Repaint();
         }
 
-        // ================================================================= drawing
         void OnGUI()
         {
             MakeStyles();
@@ -272,7 +252,6 @@ namespace CodeBreaker.Database.EditorTools
             EditorGUILayout.EndHorizontal();
         }
 
-        // ================================================================= queries
         void RunQuick(int i) => Run(QuickNames[i], QuickSql[i]);
 
         void RunCustom()
@@ -297,7 +276,6 @@ namespace CodeBreaker.Database.EditorTools
             Reload();
         }
 
-        // Runs the current query again (and refreshes the table list).
         void Reload()
         {
             error = null;
@@ -334,7 +312,7 @@ namespace CodeBreaker.Database.EditorTools
                 error = e.Message;
             }
             if (selectedRow >= rows.Count) selectedRow = -1;
-            needsMeasure = true;   // column widths are measured in OnGUI
+            needsMeasure = true;
             if (widths.Length != columns.Count) widths = new float[columns.Count];
             for (int c = 0; c < widths.Length; c++) if (widths[c] <= 0f) widths[c] = 120f;
         }
@@ -357,7 +335,6 @@ namespace CodeBreaker.Database.EditorTools
                 }
         }
 
-        // ================================================================= helpers
         void MeasureColumns()
         {
             widths = new float[columns.Count];

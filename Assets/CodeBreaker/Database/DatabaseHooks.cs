@@ -4,24 +4,6 @@ using UnityEngine;
 
 namespace CodeBreaker.Database
 {
-    // ---------------------------------------------------------------------------------------------
-    // DatabaseHooks: the ONE line the game's scripts call when something happens.
-    //
-    // Where each hook is called from:
-    //   NewGame            MainMenuController.BeginNewGame, GameFlowManager.StartNewGame (R key)
-    //   LevelStarted       GameFlowManager.BeginLevelBookkeeping (every level start / Try Again / Continue)
-    //   Level1DoorChosen   RoomManager.OnDoorChosen and RoomManager.OnThresholdCrossed
-    //   ItemCollected      L2Game.Collect (Level 2 clues/keys/items, Level 3 name tags, fuses, KEYCARDS)
-    //   Level2Flag         L2Game.SetFlag and L2Game.AssemblePhoto (every Level 2 puzzle that gets solved)
-    //   Level2Answer       L2Oven.Submit, L2RecipeCard.Pick, L2UI moon box lock, L2Workstation (checks + password)
-    //   Level3Input        L3Keypad.Submit (remembers what was typed)
-    //   Level3Result       L3Manager.Solve / L3Manager.AddWrong (every Level 3 challenge)
-    //   LevelCompleted     GameFlowManager.LevelCompleted (Level 1), L2Game.CompleteLevel (Level 3)
-    //                      Level 2 is saved by SqliteScoreStore (L2LevelSession.FinishLevel).
-    //   GameOver           GameFlowManager.GameOver
-    //
-    // Every hook is wrapped in try/catch: a database problem is logged and the game keeps going.
-    // ---------------------------------------------------------------------------------------------
     public static class DatabaseHooks
     {
         static bool Ready => DatabaseManager.IsReady;
@@ -35,7 +17,6 @@ namespace CodeBreaker.Database
             catch (Exception e) { Debug.LogWarning("[Database] " + what + " not saved: " + e.Message); }
         }
 
-        // ------------------------------------------------------------------ game start
         public static void NewGame() => Safe("New game", () => DatabaseManager.Instance.StartNewGame());
 
         public static void LevelStarted(string sceneName, float health)
@@ -52,8 +33,6 @@ namespace CodeBreaker.Database
             });
         }
 
-        // ------------------------------------------------------------------ Level 1
-        // questionIndex = index in the QuestionBank (0-14) = puzzle "Level 1/q01".."q15".
         public static void Level1DoorChosen(int questionIndex, string chosenLetter, bool correct, string currentRoom)
         {
             if (questionIndex < 0) return;
@@ -71,7 +50,6 @@ namespace CodeBreaker.Database
             });
         }
 
-        // ------------------------------------------------------------------ items, clues and keycards
         public static void ItemCollected(string itemId)
         {
             if (string.IsNullOrEmpty(itemId)) return;
@@ -84,11 +62,10 @@ namespace CodeBreaker.Database
                     return;
                 }
                 try { Db.CollectClue(ProgressId, itemId); }
-                catch (ArgumentException) { /* not a clue the database tracks (e.g. the flashlight) */ }
+                catch (ArgumentException) {  }
             });
         }
 
-        // The value printed on the card in THIS run (Level 3 values are random per run).
         static string KeycardCode(string itemId)
         {
             CodeBreaker.Level3.L3PuzzleSet p = CodeBreaker.Level3.L3Puzzle.Current;
@@ -99,8 +76,6 @@ namespace CodeBreaker.Database
             return "";
         }
 
-        // ------------------------------------------------------------------ Level 2 puzzles
-        // A Level 2 puzzle is solved when its flag is set (PuzzleBook.cs uses the same flags).
         static readonly Dictionary<string, string> Level2FlagToPuzzle = new Dictionary<string, string>
         {
             { "photo_assembled",  "living_photo" },
@@ -117,10 +92,8 @@ namespace CodeBreaker.Database
             { "picture_decoded",  "study_picture" },
         };
 
-        // Puzzles whose correct answer was already saved by Level2Answer (so the flag doesn't save it twice).
         static readonly HashSet<string> answeredLevel2 = new HashSet<string>();
 
-        // A typed / chosen answer: oven code, moon box arrows, recipe choice, computer checks and password.
         public static void Level2Answer(string puzzle, string answer, bool correct)
         {
             if (string.IsNullOrEmpty(puzzle)) return;
@@ -128,36 +101,32 @@ namespace CodeBreaker.Database
             Safe("Level 2 " + puzzle, () => Db.RecordAttempt(ProgressId, "Level 2/" + puzzle, answer ?? "", correct));
         }
 
-        // Called by L2Game whenever a flag is turned on. Only Level 2 puzzle flags are saved.
         public static void Level2Flag(string sceneName, string flag)
         {
             if (sceneName != "Level 2" || string.IsNullOrEmpty(flag)) return;
             string puzzle;
             if (!Level2FlagToPuzzle.TryGetValue(flag, out puzzle)) return;
-            if (answeredLevel2.Remove(puzzle)) return;   // already saved with the typed answer
+            if (answeredLevel2.Remove(puzzle)) return;
             Safe("Level 2 " + puzzle, () =>
             {
                 Db.RecordAttempt(ProgressId, "Level 2/" + puzzle, "(solved)", true);
-                if (flag == "photo_assembled") Db.CollectClue(ProgressId, "family_photo");   // the restored photo is a clue too
+                if (flag == "photo_assembled") Db.CollectClue(ProgressId, "family_photo");
             });
         }
 
-        // ------------------------------------------------------------------ Level 3 challenges
         static readonly Dictionary<string, string> lastInput = new Dictionary<string, string>();
 
-        // Called by L3Keypad before it checks the answer, so the attempt stores what was typed.
         public static void Level3Input(string station, string typed)
         {
             if (!string.IsNullOrEmpty(station)) lastInput[station] = typed ?? "";
         }
 
-        // Called by L3Manager when a station is solved or answered wrong.
         public static void Level3Result(string station, bool correct)
         {
             if (string.IsNullOrEmpty(station)) return;
             string answer;
             if (lastInput.TryGetValue(station, out answer)) lastInput.Remove(station);
-            else answer = correct ? "(solved)" : "(wrong)";   // stations without a keypad (fuses, levers, tags, cameras)
+            else answer = correct ? "(solved)" : "(wrong)";
 
             Safe("Level 3 " + station, () =>
             {
@@ -165,20 +134,19 @@ namespace CodeBreaker.Database
                 if (station == "term")
                     Debug.Log("[Database] Central terminal: all three keycards collected = " + Db.HasAllLevel3Keycards(id));
                 try { Db.RecordAttempt(id, "Level 3/" + station, answer, correct); }
-                catch (ArgumentException) { /* a station that is not a puzzle in the database */ }
+                catch (ArgumentException) {  }
             });
         }
 
-        // ------------------------------------------------------------------ level end
         public static void LevelCompleted(string sceneName, float remainingTime)
         {
             int level = DatabaseManager.LevelNumberOf(sceneName);
             if (level == 0) return;
-            if (level == 2 && CodeBreaker.Level2.ScoreStores.Current is SqliteScoreStore) return;   // saved by SqliteScoreStore
+            if (level == 2 && CodeBreaker.Level2.ScoreStores.Current is SqliteScoreStore) return;
             Safe("Level " + level + " completion", () =>
             {
                 int id = ProgressId;
-                int hints = level == 2 ? Db.CountHintsUsed(id, 2) : 0;   // only Level 2 hints cost points
+                int hints = level == 2 ? Db.CountHintsUsed(id, 2) : 0;
                 int score = GameDatabase.CalculateLevelScore(remainingTime, hints);
                 int next = Db.CompleteLevel(id, level, remainingTime, score);
                 Debug.Log("[Database] Level " + level + " complete: +" + score + " points" +

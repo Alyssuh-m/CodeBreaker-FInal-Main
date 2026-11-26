@@ -6,32 +6,14 @@ using CodeBreaker.Level2;
 
 namespace CodeBreaker.Database
 {
-    // ---------------------------------------------------------------------------------------------
-    // SqliteSaveStore: the game's save ("Load Saved Games > Continue") stored in SQLite.
-    //
-    // SaveSystem.cs calls Load / Save / Delete here instead of writing codebreaker_save.json.
-    // The rest of the game still works with SaveData objects, so no level script had to change.
-    //
-    //   SaveData field                     ->  SQLite
-    //   sceneName, health, wrongAttempts,  ->  player_progress (current_level_id, health,
-    //   totalPlayTime, savedAt                  wrong_attempts, total_play_time, last_saved)
-    //   completedLevels                    ->  level_completion
-    //   checkpoint + levelCheckpoints      ->  level_checkpoint (+ checkpoint_item for Level 2/3)
-    //   highestUnlocked, solvedPuzzles     ->  not stored: worked out again on Load (no duplicate data)
-    //
-    // The first time the database is used, an existing codebreaker_save.json is copied in once,
-    // so nobody loses their progress. The JSON file itself is left alone.
-    // ---------------------------------------------------------------------------------------------
     public static class SqliteSaveStore
     {
         const string ImportedPref = "CodeBreaker.JsonSaveImported";
 
-        // True when SQLite is running. If it is not (e.g. sqlite3.dll missing) SaveSystem falls back to JSON.
         public static bool Active => DatabaseManager.IsReady;
 
         static GameDatabase Db => DatabaseManager.Instance.Db;
 
-        // ------------------------------------------------------------------ load
         public static SaveData Load()
         {
             DatabaseManager m = DatabaseManager.Instance;
@@ -50,7 +32,6 @@ namespace CodeBreaker.Database
             };
             d.levelName = SaveSystem.LevelName(d.sceneName);
 
-            // completed levels -> unlocked levels and solved puzzles
             int highestDone = 0;
             foreach (int n in Db.GetCompletedLevels(s.ProgressId))
             {
@@ -61,7 +42,6 @@ namespace CodeBreaker.Database
             }
             d.highestUnlocked = Mathf.Clamp(Math.Max(s.LevelNumber, highestDone + 1), 1, SaveSystem.LevelCount);
 
-            // checkpoints
             foreach (GameDatabase.Checkpoint c in Db.LoadCheckpoints(s.ProgressId))
             {
                 string scene = DatabaseManager.SceneNameOf(c.LevelNumber);
@@ -82,7 +62,6 @@ namespace CodeBreaker.Database
             return d;
         }
 
-        // ------------------------------------------------------------------ save
         public static void Save(SaveData d)
         {
             int level = DatabaseManager.LevelNumberOf(d.sceneName);
@@ -105,7 +84,6 @@ namespace CodeBreaker.Database
             Db.ReplaceCheckpoints(id, list);
         }
 
-        // ------------------------------------------------------------------ delete ("Start New Game")
         public static void Delete()
         {
             DatabaseManager m = DatabaseManager.Instance;
@@ -113,26 +91,23 @@ namespace CodeBreaker.Database
             m.ForgetProgress();
         }
 
-        // ------------------------------------------------------------------ one-time JSON import
-        // Copies an existing JSON save into SQLite the first time, then never again.
         public static void ImportJsonOnce(Func<SaveData> loadJson)
         {
             if (PlayerPrefs.GetInt(ImportedPref, 0) == 1) return;
             PlayerPrefs.SetInt(ImportedPref, 1);
-            if (DatabaseManager.Instance.LoadCurrentSave() != null) return;   // the database already has a save
+            if (DatabaseManager.Instance.LoadCurrentSave() != null) return;
             SaveData old = loadJson();
             if (old == null) return;
             Save(old);
             Debug.Log("[Database] The old JSON save (" + old.sceneName + ") was copied into SQLite.");
         }
 
-        // ================================================================== SaveData <-> rows
         static void AddCheckpoint(List<GameDatabase.Checkpoint> list, string scene, string label, string json, bool current)
         {
             int level = DatabaseManager.LevelNumberOf(scene);
             if (level == 0 || string.IsNullOrEmpty(json)) return;
             foreach (GameDatabase.Checkpoint existing in list)
-                if (existing.LevelNumber == level) return;   // one checkpoint per level
+                if (existing.LevelNumber == level) return;
 
             var c = new GameDatabase.Checkpoint { LevelNumber = level, Label = label, IsCurrent = current };
             try
@@ -175,7 +150,6 @@ namespace CodeBreaker.Database
             c.Items.Add(new GameDatabase.CheckpointItem { Type = type, Name = name, Value1 = v1, Value2 = v2 });
         }
 
-        // Rebuilds the level's own checkpoint data, exactly as the level scripts expect to read it.
         static string ToJson(GameDatabase.Checkpoint c)
         {
             if (c.LevelNumber == 1)
@@ -208,7 +182,6 @@ namespace CodeBreaker.Database
             return JsonUtility.ToJson(s);
         }
 
-        // "2026-11-22 13:39:55" (UTC, from SQLite) -> local ISO time like the JSON save used.
         static string UtcToLocalIso(string utc)
         {
             DateTime t;

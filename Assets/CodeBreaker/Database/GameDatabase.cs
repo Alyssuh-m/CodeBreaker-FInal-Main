@@ -4,18 +4,7 @@ using Mono.Data.Sqlite;
 
 namespace CodeBreaker.Database
 {
-    // ---------------------------------------------------------------------------------------------
-    // GameDatabase: every SQL statement the game uses, in one place.
-    //
-    // This class has NO Unity code in it (no MonoBehaviour, no Debug.Log), so it is easy to read and
-    // can be tested outside Unity. DatabaseManager.cs creates ONE GameDatabase when the game starts
-    // and the rest of the game calls it through DatabaseManager.Instance.Db.
-    //
-    // Every value that comes from the player is passed with @parameters (never glued into the SQL
-    // string), which prevents SQL injection and problems with quotes like  Grandma's.
-    // ---------------------------------------------------------------------------------------------
 
-    // One row of the save slot (player_progress joined with player and level).
     public class SaveGame
     {
         public int ProgressId;
@@ -24,16 +13,15 @@ namespace CodeBreaker.Database
         public int LevelNumber;
         public string LevelName;
         public string CurrentRoom;
-        public string TimerStatus;     // RUNNING, PAUSED, STOPPED, TIME_UP
-        public float RemainingTime;    // seconds
+        public string TimerStatus;
+        public float RemainingTime;
         public float Health;
         public int WrongAttempts;
-        public float TotalPlayTime;    // seconds, all levels
+        public float TotalPlayTime;
         public int Score;
-        public string GameStatus;      // IN_PROGRESS, GAME_OVER, COMPLETED
-        public string LastSaved;       // UTC, "yyyy-MM-dd HH:mm:ss" (SQLite datetime('now'))
+        public string GameStatus;
+        public string LastSaved;
 
-        // The save time in the player's own time zone, for the Load Saved Games screen.
         public string LastSavedLocal
         {
             get
@@ -47,7 +35,6 @@ namespace CodeBreaker.Database
         }
     }
 
-    // One puzzle (Level 1 questions use ChoiceA / ChoiceB, the other levels leave them null).
     public class PuzzleInfo
     {
         public int PuzzleId;
@@ -64,19 +51,17 @@ namespace CodeBreaker.Database
 
     public class GameDatabase : IDisposable
     {
-        // Score rule used by Level 2 (L2LevelSession): seconds left x 10, minus 250 per hint.
         public const int PointsPerSecond = 10;
         public const int HintPenalty = 250;
         public const int LastLevel = 3;
 
         readonly SqliteConnection connection;
 
-        // dbPath example: C:/Users/<you>/AppData/LocalLow/<company>/<game>/codebreaker.db
         public GameDatabase(string dbPath)
         {
             connection = new SqliteConnection("URI=file:" + dbPath);
             connection.Open();
-            Execute("PRAGMA foreign_keys = ON;");   // must be turned on for every new connection
+            Execute("PRAGMA foreign_keys = ON;");
         }
 
         public void Dispose()
@@ -85,7 +70,6 @@ namespace CodeBreaker.Database
             connection.Dispose();
         }
 
-        // Runs codebreaker_database.sql (tables + game content). Safe to call every time the game starts.
         public void RunScript(string sqlScript)
         {
             using (SqliteTransaction t = connection.BeginTransaction())
@@ -96,8 +80,6 @@ namespace CodeBreaker.Database
             }
         }
 
-        // A database made by an older version of the script gets the columns added since then.
-        // (CREATE TABLE IF NOT EXISTS never changes a table that already exists.)
         void UpgradeSchema()
         {
             AddColumnIfMissing("player_progress", "wrong_attempts", "INTEGER NOT NULL DEFAULT 0 CHECK (wrong_attempts >= 0)");
@@ -111,7 +93,6 @@ namespace CodeBreaker.Database
                 Execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition + ";");
         }
 
-        // =========================================================================== small helpers
         SqliteCommand Command(string sql, params object[] nameValuePairs)
         {
             SqliteCommand cmd = connection.CreateCommand();
@@ -121,14 +102,12 @@ namespace CodeBreaker.Database
             return cmd;
         }
 
-        // INSERT / UPDATE / DELETE: returns how many rows changed.
         int Execute(string sql, params object[] nameValuePairs)
         {
             using (SqliteCommand cmd = Command(sql, nameValuePairs))
                 return cmd.ExecuteNonQuery();
         }
 
-        // SELECT that returns one value (or null when there is no row).
         object Scalar(string sql, params object[] nameValuePairs)
         {
             using (SqliteCommand cmd = Command(sql, nameValuePairs))
@@ -142,7 +121,6 @@ namespace CodeBreaker.Database
 
         static string Text(SqliteDataReader r, int column) => r.IsDBNull(column) ? null : r.GetString(column);
 
-        // =========================================================================== levels
         public int GetLevelId(int levelNumber)
         {
             object id = Scalar("SELECT level_id FROM level WHERE level_number = @n;", "@n", levelNumber);
@@ -156,7 +134,6 @@ namespace CodeBreaker.Database
         public string GetLevelName(int levelNumber) =>
             (string)Scalar("SELECT level_name FROM level WHERE level_number = @n;", "@n", levelNumber);
 
-        // The room the player starts in, for each level.
         public static string FirstRoom(int levelNumber)
         {
             if (levelNumber == 1) return "Room 1";
@@ -164,8 +141,6 @@ namespace CodeBreaker.Database
             return "Server Room";
         }
 
-        // =========================================================================== players
-        // Register a player, or return the existing one with that name (names are not case sensitive).
         public int GetOrCreatePlayer(string playerName)
         {
             if (string.IsNullOrWhiteSpace(playerName)) throw new ArgumentException("Player name is empty.");
@@ -178,9 +153,6 @@ namespace CodeBreaker.Database
             return LastInsertId();
         }
 
-        // =========================================================================== save slot
-        // "Start New Game": the old save is deleted (ON DELETE CASCADE removes its attempts, clues,
-        // keycards and completed levels) and a fresh save starts at Level 1, Room 1, full timer.
         public int StartNewGame(int playerId)
         {
             using (SqliteTransaction t = connection.BeginTransaction())
@@ -195,7 +167,6 @@ namespace CodeBreaker.Database
             }
         }
 
-        // "Load Saved Games": returns the player's save, or null when there is none.
         public SaveGame LoadSave(int playerId)
         {
             const string sql = @"
@@ -231,7 +202,6 @@ namespace CodeBreaker.Database
             }
         }
 
-        // Auto-save: current level, room, timer and health (REQ010).
         public void SaveProgress(int progressId, int levelNumber, string currentRoom,
                                  string timerStatus, float remainingTime, float health)
         {
@@ -248,7 +218,6 @@ namespace CodeBreaker.Database
                     "@id", progressId);
         }
 
-        // Only the current level (the room becomes that level's first room).
         public void SetCurrentLevel(int progressId, int levelNumber)
         {
             Execute(@"UPDATE player_progress
@@ -257,7 +226,6 @@ namespace CodeBreaker.Database
                     "@level", GetLevelId(levelNumber), "@room", FirstRoom(levelNumber), "@id", progressId);
         }
 
-        // Only the timer (e.g. when the player pauses the game).
         public void SaveTimer(int progressId, string timerStatus, float remainingTime)
         {
             Execute(@"UPDATE player_progress
@@ -266,13 +234,11 @@ namespace CodeBreaker.Database
                     "@status", timerStatus, "@time", Math.Max(0f, remainingTime), "@id", progressId);
         }
 
-        // A level (re)starts: the save is playable again (e.g. Try Again after a game over).
         public void SetInProgress(int progressId)
         {
             Execute("UPDATE player_progress SET game_status = 'IN_PROGRESS' WHERE progress_id = @id;", "@id", progressId);
         }
 
-        // Trap room / health 0 / time up.
         public void SetGameOver(int progressId, bool timeUp)
         {
             Execute(@"UPDATE player_progress
@@ -284,10 +250,6 @@ namespace CodeBreaker.Database
                     "@timeUp", timeUp ? 1 : 0, "@id", progressId);
         }
 
-        // =========================================================================== game save (Continue)
-        // Used by SaveSystem.cs through SqliteSaveStore.cs: this is the game's real save now.
-
-        // The main save values. The room only changes when the level changes.
         public void SaveSlot(int progressId, int levelNumber, float health, int wrongAttempts, float totalPlayTime)
         {
             Execute(@"UPDATE player_progress
@@ -303,23 +265,20 @@ namespace CodeBreaker.Database
                     "@play", Math.Max(0f, totalPlayTime), "@id", progressId);
         }
 
-        // Makes sure a finished level is listed as completed (CompleteLevel adds the time and score).
         public void MarkLevelCompleted(int progressId, int levelNumber)
         {
             Execute(@"INSERT OR IGNORE INTO level_completion (progress_id, level_id, remaining_time, level_score)
                       VALUES (@id, @level, 0, 0);", "@id", progressId, "@level", GetLevelId(levelNumber));
         }
 
-        // Deletes the player's save; CASCADE removes everything that belongs to it.
         public void DeleteSave(int playerId)
         {
             Execute("DELETE FROM player_progress WHERE player_id = @p;", "@p", playerId);
         }
 
-        // ---------------------------------------------------------------- checkpoints
         public class CheckpointItem
         {
-            public string Type;     // inventory, collected, flag, number, door, light
+            public string Type;
             public string Name;
             public int? Value1;
             public int? Value2;
@@ -330,21 +289,20 @@ namespace CodeBreaker.Database
             public int LevelNumber;
             public string Label;
             public bool IsCurrent;
-            public int? RoomsCleared;        // Level 1
-            public float? TimeRemaining;     // Level 1 (-1 = full time)
-            public int? CheckpointNumber;    // Level 2 / 3
+            public int? RoomsCleared;
+            public float? TimeRemaining;
+            public int? CheckpointNumber;
             public string HeldItem;
             public bool? FlashlightOn;
             public string Objective;
             public List<CheckpointItem> Items = new List<CheckpointItem>();
         }
 
-        // Replaces all checkpoints of a save with the given list (one per level).
         public void ReplaceCheckpoints(int progressId, List<Checkpoint> checkpoints)
         {
             using (SqliteTransaction t = connection.BeginTransaction())
             {
-                Execute("DELETE FROM level_checkpoint WHERE progress_id = @id;", "@id", progressId);   // items go too (CASCADE)
+                Execute("DELETE FROM level_checkpoint WHERE progress_id = @id;", "@id", progressId);
                 foreach (Checkpoint c in checkpoints)
                 {
                     int levelId = GetLevelId(c.LevelNumber);
@@ -416,7 +374,6 @@ namespace CodeBreaker.Database
             return list;
         }
 
-        // =========================================================================== score
         public static int CalculateLevelScore(float remainingTime, int hintsUsed) =>
             Math.Max(0, (int)Math.Floor(remainingTime) * PointsPerSecond - hintsUsed * HintPenalty);
 
@@ -432,7 +389,6 @@ namespace CodeBreaker.Database
                     "@pts", points, "@id", progressId);
         }
 
-        // =========================================================================== puzzles
         const string PuzzleColumns = @"
             SELECT pz.puzzle_id, l.level_number, pz.puzzle_key, pz.room_name, pz.puzzle_type, pz.question,
                    pz.choice_a, pz.choice_b, pz.correct_answer, pz.puzzle_description
@@ -468,7 +424,6 @@ namespace CodeBreaker.Database
             return list;
         }
 
-        // Level 1: a random lectern question. The save's own answered questions are skipped when possible.
         public PuzzleInfo GetRandomLevel1Question(int progressId)
         {
             string sql = PuzzleColumns + @"
@@ -481,8 +436,6 @@ namespace CodeBreaker.Database
                 return r.Read() ? ReadPuzzle(r) : null;
         }
 
-        // Compares an answer with the stored correct answer (spaces and capital letters ignored,
-        // like the Study Room password "byte 2019").
         public bool CheckAnswer(string puzzleKey, string answer)
         {
             PuzzleInfo p = GetPuzzle(puzzleKey);
@@ -492,8 +445,6 @@ namespace CodeBreaker.Database
         static string Normalize(string s) =>
             (s ?? "").Replace(" ", "").Replace("\t", "").Trim().ToUpperInvariant();
 
-        // Records one submitted answer (REQ012). isCorrect comes from the game's own check, because
-        // Level 3 randomises its values every run. Returns the new attempt_id.
         public int RecordAttempt(int progressId, string puzzleKey, string submittedAnswer, bool isCorrect)
         {
             object puzzleId = Scalar("SELECT puzzle_id FROM puzzle WHERE puzzle_key = @key;", "@key", puzzleKey);
@@ -505,7 +456,6 @@ namespace CodeBreaker.Database
             return LastInsertId();
         }
 
-        // Puzzles of a level that this save has solved at least once (e.g. Level 3 completed challenges).
         public List<string> GetSolvedPuzzles(int progressId, int levelNumber)
         {
             var keys = new List<string>();
@@ -522,9 +472,6 @@ namespace CodeBreaker.Database
             return keys;
         }
 
-        // =========================================================================== clues and hints
-        // Picks up a clue, key or item, or opens a hint. Collecting the same one twice does nothing.
-        // Returns true when it was new.
         public bool CollectClue(int progressId, string clueKey)
         {
             object clueId = Scalar("SELECT clue_id FROM clue WHERE clue_key = @key;", "@key", clueKey);
@@ -555,7 +502,6 @@ namespace CodeBreaker.Database
                 WHERE cc.progress_id = @id AND c.clue_type = 'Hint' AND l.level_number = @n;",
                 "@id", progressId, "@n", levelNumber));
 
-        // The hint texts of a puzzle, in order.
         public List<string> GetHints(string puzzleKey)
         {
             var hints = new List<string>();
@@ -570,9 +516,6 @@ namespace CodeBreaker.Database
             return hints;
         }
 
-        // =========================================================================== keycards (Level 3)
-        // itemKey: "keycard_red", "keycard_blue" or "keycard_green" (same IDs as L2Items).
-        // accessCode: the value printed on the card this run, e.g. "m = 9".
         public bool CollectKeycard(int progressId, string itemKey, string accessCode)
         {
             object keycardId = Scalar("SELECT keycard_id FROM keycard WHERE item_key = @key;", "@key", itemKey);
@@ -594,7 +537,6 @@ namespace CodeBreaker.Database
             return keys;
         }
 
-        // The central terminal only unlocks when this is true (REQ023).
         public bool HasAllLevel3Keycards(int progressId)
         {
             int collected = Convert.ToInt32(Scalar(@"
@@ -606,15 +548,10 @@ namespace CodeBreaker.Database
             return total > 0 && collected == total;
         }
 
-        // =========================================================================== level completion
-        // A level is finished: it is stored as completed (Try Again replaces the old result), the
-        // total score is updated and the save moves on to the next level (REQ016).
-        // Returns the next level number, or 0 when the whole game is complete.
         public int CompleteLevel(int progressId, int levelNumber, float remainingTime, int levelScore)
         {
             using (SqliteTransaction t = connection.BeginTransaction())
             {
-                // Score: take out this level's old score (if it was played before), add the new one.
                 object oldScore = Scalar(@"SELECT level_score FROM level_completion
                                            WHERE progress_id = @id AND level_id = @level;",
                                          "@id", progressId, "@level", GetLevelId(levelNumber));
